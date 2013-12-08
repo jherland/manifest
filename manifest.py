@@ -187,18 +187,13 @@ class Manifest(dict):
         drill into those diffs to generate everything beneath as additional
         diffs.
         """
-        def next_or_none(gen):
-            try:
-                return next(gen)
-            except StopIteration:
-                return None
-
+        none_iter = itertools.repeat(None)
         exists = lambda p: p is not None
         entry_key = lambda e: e[0] if e is not None else None
 
         print "\nmindiff:", ", ".join([repr(a) for a in args])
         gens = [iter(sorted(m.iteritems())) for m in args]
-        entries = [next_or_none(gen) for gen in gens]
+        entries = [next(gen) for gen in gens]
         while filter(exists, entries):
             print "  entries:", ", ".join([repr(e) for e in entries])
             least = min([entry_key(e) for e in entries if e])
@@ -207,13 +202,13 @@ class Manifest(dict):
             for entry, gen in zip(entries, gens):
                 if entry_key(entry) == least:
                     ret.append(entry)
-                    next_entries.append(next_or_none(gen))
+                    next_entries.append(next(gen))
                 else:
                     ret.append(None)
                     next_entries.append(entry)
             found = len(filter(exists, ret))
             assert found > 0
-            if found > 1: # Drill down
+            if found > 1: # drill down
                 print "  -> drill into %s" % (repr(ret)) # TODO
             else:
                 yield tuple(map(entry_key, ret))
