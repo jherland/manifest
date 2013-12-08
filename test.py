@@ -14,7 +14,7 @@ from manifest import Manifest
 TEST_DIR = os.path.normpath(os.path.join(
     os.getcwd(), os.path.dirname(sys.argv[0]), "t"))
 
-def t_path(self, path):
+def t_path(path):
     """Return absolute path to 'path' inside t/."""
     return os.path.join(TEST_DIR, path)
 
@@ -290,9 +290,9 @@ class TestManifest_walk(unittest.TestCase):
 
     def must_equal_tar(self, tar_path, expect):
         try:
-            tarfile = t_path(tar_path)
             tempdir = tempfile.mkdtemp()
-            subprocess.check_call(["tar", "-xf", tarfile], cwd = tempdir)
+            subprocess.check_call(["tar", "-xf", t_path(tar_path)],
+                                  cwd = tempdir)
             m = Manifest.walk(tempdir)
             s = StringIO()
             m.write(s)
