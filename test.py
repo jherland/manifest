@@ -68,6 +68,11 @@ class TestManifest_parse_lines(unittest.TestCase):
         self.must_equal("This is a token with spaces",
                         [(0, "This is a token with spaces")])
 
+    def test_list_of_strings(self):
+        stream = Manifest.parse_lines(["foo", "bar", "\tbaz", "\t    xyzzy"])
+        self.assertEqual(list(stream),
+                         [(0, "foo"), (0, "bar"), (1, "baz"), (2, "xyzzy")])
+
 class TestManifest_parse(unittest.TestCase):
 
     def test_empty(self):
@@ -80,7 +85,7 @@ class TestManifest_parse(unittest.TestCase):
         self.assertEqual(m.keys(), ["foo"])
         self.assertEqual(len(m["foo"]), 0)
 
-    def test_two_word(self):
+    def test_two_words(self):
         m = Manifest.parse(StringIO("foo\nbar"))
         self.assertEqual(len(m), 2)
         self.assertEqual(sorted(m.keys()), ["bar", "foo"])

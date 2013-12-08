@@ -16,7 +16,10 @@ class Manifest(dict):
 
     @staticmethod
     def parse_lines(f):
-        """Return (indent, token) for each logical line in the given file."""
+        """Return (indent, token) for each logical line in the given file.
+
+        The given file 'f' may be anything that can be iterated to yield lines.
+        """
         indents = [0] # Stack of indent levels. Initial 0 is always present
         for linenum, line in enumerate(f):
             # Strip trailing newline, strip comment to EOL, and s/tab/spaces/
@@ -41,7 +44,10 @@ class Manifest(dict):
 
     @classmethod
     def parse(cls, f):
-        """Parse the given file and return the resulting toplevel Manifest."""
+        """Parse the given file and return the resulting toplevel Manifest.
+
+        The given file 'f' may be anything that can be iterated to yield lines.
+        """
         prev = cur = top = cls()
         level = 0
         for indent, token in cls.parse_lines(f):
