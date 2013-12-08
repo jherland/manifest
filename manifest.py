@@ -69,6 +69,12 @@ class Manifest(dict):
 
     @classmethod
     def walk(cls, path):
+        """Generate a Manifest from the given directory structure.
+
+        Recursively walk the directory structure rooted at 'path' and generate
+        a Manifest tree that mirrors the structure. Return the top Manifest
+        object, which corresponding to 'path'.
+        """
         import os
         if not os.path.isdir(path):
             raise ValueError("'%s' is not a directory" % (path))
