@@ -73,7 +73,14 @@ class Manifest(dict):
         import os
         if not os.path.isdir(path):
             raise ValueError("'%s' is not a directory" % (path))
-        return cls()
+
+        cur = top = cls()
+        for dirpath, dirnames, filenames in os.walk(path):
+            print dirpath, dirnames, filenames
+            for name in filenames + dirnames:
+                assert name not in cur
+                cur[name] = cls()
+        return top
 
     def __init__(self, *args, **kwargs):
         dict.__init__(self, *args, **kwargs)

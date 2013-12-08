@@ -208,6 +208,17 @@ class TestManifest_from_walk(unittest.TestCase):
             os.makedirs(emptydir)
         self.must_equal("empty", "")
 
+    def test_single_file(self):
+        self.must_equal("single_file", "foo\n")
+
+    def test_two_files(self):
+        self.must_equal("two_files", "bar\nfoo\n")
+
+    def test_file_and_empty_subdir(self):
+        emptydir = self.tpath("file_and_empty_subdir/subdir")
+        if not os.path.exists(emptydir):
+            os.makedirs(emptydir)
+        self.must_equal("file_and_empty_subdir", "file\nsubdir\n")
 
 if __name__ == '__main__':
     unittest.main()
