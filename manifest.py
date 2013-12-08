@@ -182,3 +182,43 @@ class Manifest(dict):
         for t in cls.merge(*args):
             if filter(lambda p: p is None, t): # One or more is None
                 yield t
+
+    @classmethod
+    def mindiff(cls, *args):
+        """Generate the minimal sequence of differences between manifests.
+
+        This is the same as above, except when differences are found, we don't
+        drill into those diffs to generate everything beneath as additional
+        diffs.
+        """
+        def next_or_none(gen):
+            try:
+                return next(gen)
+            except StopIteration:
+                return None
+
+        exists = lambda p: p is not None
+        entry_key = lambda e: e[0] if e is not None else None
+
+        print "\nmindiff:", ", ".join([repr(a) for a in args])
+        gens = [iter(sorted(m.iteritems())) for m in args]
+        entries = [next_or_none(gen) for gen in gens]
+        while filter(exists, entries):
+            print "  entries:", ", ".join([repr(e) for e in entries])
+            least = min([entry_key(e) for e in entries if e])
+            print "  least:", least
+            ret, next_entries = [], []
+            for entry, gen in zip(entries, gens):
+                if entry_key(entry) == least:
+                    ret.append(entry)
+                    next_entries.append(next_or_none(gen))
+                else:
+                    ret.append(None)
+                    next_entries.append(entry)
+            found = len(filter(exists, ret))
+            assert found > 0
+            if found > 1: # Drill down
+                print "  -> drill into %s" % (repr(ret)) # TODO
+            else:
+                yield tuple(map(entry_key, ret))
+            entries = next_entries

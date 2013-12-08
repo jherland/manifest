@@ -488,5 +488,36 @@ class TestManifest_diff(unittest.TestCase):
             (None, "baz/baz/bar"), (None, "baz/baz/baz"), (None, "baz/baz/foo"),
             (None, "baz/foo")])
 
+    def test_min_diff_two_files_vs_files_at_many_levels(self):
+        m1 = self.from_tar("two_files.tar")
+        m2 = self.from_tar("files_at_many_levels.tar")
+        self.assertEqual(list(Manifest.mindiff(m1, m2)), [(None, "baz")])
+
+    def test_min_diff_with_diff_at_muliples_levels(self):
+        m1 = Manifest.parse("""\
+            1foo
+            2bar
+                1xyzzy
+                    1blah
+                2zyxxy
+                3diff
+            3baz
+            """.split("\n"))
+        m2 = Manifest.parse("""\
+            1foo
+            2bar
+                1xyzzy
+                    1blah
+                    2diff
+                2zyxxy
+            3baz
+            4diff
+            """.split("\n"))
+        #self.assertEqual(list(Manifest.mindiff(m1, m2)), [
+            #(None, "2bar/1xyzzy/2diff"),
+            #("2bar/3diff", None),
+            #(None, "4diff"),
+        #])
+
 if __name__ == '__main__':
     unittest.main()
