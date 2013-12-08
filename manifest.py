@@ -128,3 +128,16 @@ class Manifest(dict):
             yield p
             for c in m.iterpaths():
                 yield p + "/" + c
+
+    def diff(self, other):
+        """Compare this manifest against another.
+
+        Generate a sequence of the differences between self and other. Each
+        generated item is a three-tuple (self_path, other_path, details), where
+        self_path is a relative path into self, or None. other_path is the same
+        for 'other'. details is a string describing the difference between
+        self_path and/or other_path. This might also be None.
+        Obviously, if nothing is generated, self and other are considered
+        equal/equivalent.
+        """
+        return [None] if cmp(self, other) else []

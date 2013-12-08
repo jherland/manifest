@@ -7,6 +7,7 @@ from cStringIO import StringIO
 import tempfile
 import shutil
 import subprocess
+import glob
 
 from manifest import Manifest
 
@@ -355,6 +356,58 @@ class TestManifest_iterpaths(unittest.TestCase):
             "baz/foo",
             "foo",
         ])
+
+class TestManifest_diff(unittest.TestCase):
+
+    def from_tar(self, tar_path):
+        try:
+            tempdir = tempfile.mkdtemp()
+            subprocess.check_call(["tar", "-xf", t_path(tar_path)],
+                                  cwd = tempdir)
+            return Manifest.walk(tempdir)
+        finally:
+            shutil.rmtree(tempdir)
+
+    def test_diff_empties(self):
+        m1 = Manifest()
+        m2 = Manifest.walk(t_path("empty"))
+        m3 = self.from_tar(t_path("empty.tar"))
+        self.assertEquals(list(m1.diff(m2)), [])
+        self.assertEquals(list(m1.diff(m3)), [])
+        self.assertEquals(list(m2.diff(m1)), [])
+        self.assertEquals(list(m2.diff(m3)), [])
+        self.assertEquals(list(m3.diff(m1)), [])
+        self.assertEquals(list(m3.diff(m2)), [])
+        self.assertEquals(m1, m2)
+        self.assertEquals(m2, m3)
+        self.assertEquals(m3, m1)
+
+    def test_diff_tar_and_dirs(self):
+        tars = glob.glob(t_path("*.tar"))
+        for t in tars:
+            d = os.path.splitext(t)[0]
+            if not os.path.isdir(d): # Need corresponding dir
+                continue
+            m1 = Manifest.walk(d)
+            m2 = self.from_tar(t)
+            self.assertEqual(list(m1.diff(m2)), [])
+            self.assertEqual(list(m2.diff(m1)), [])
+            self.assertEqual(m1, m2)
+            self.assertEqual(m2, m1)
+
+    def test_diff_unlike(self):
+        tars = glob.glob(t_path("*.tar"))
+        shifted = tars[:]
+        shifted.append(shifted.pop(0))
+        for t1, t2 in zip(tars, shifted):
+            m1 = self.from_tar(t1)
+            m2 = self.from_tar(t2)
+            self.assertNotEqual(len(m1.diff(m2)), 0)
+            self.assertNotEqual(len(m2.diff(m1)), 0)
+            self.assertNotEqual(m1, m2)
+            self.assertNotEqual(m2, m1)
+
+            self.assertEqual(len(m1.diff(m2)), len(m2.diff(m1)))
 
 if __name__ == '__main__':
     unittest.main()
