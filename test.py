@@ -10,6 +10,14 @@ import subprocess
 
 from manifest import Manifest
 
+# Absolute path to t/ subdir
+TEST_DIR = os.path.normpath(os.path.join(
+    os.getcwd(), os.path.dirname(sys.argv[0]), "t"))
+
+def t_path(self, path):
+    """Return absolute path to 'path' inside t/."""
+    return os.path.join(TEST_DIR, path)
+
 class TestManifest_parse_lines(unittest.TestCase):
 
     # Helpers
@@ -232,34 +240,28 @@ class TestManifest_resolve(unittest.TestCase):
         self.assertTrue(m.resolve("foo/bar/../../..") is None)
         self.assertTrue(m.resolve("foo/bar/../bar/../../..") is None)
 
-class TestManifest_from_walk(unittest.TestCase):
-
-    testdir = os.path.normpath(os.path.join(os.getcwd(),
-                                            os.path.dirname(sys.argv[0]), "t"))
-
-    def tpath(self, path):
-        return os.path.join(self.testdir, path)
+class TestManifest_walk(unittest.TestCase):
 
     def must_equal(self, path, expect):
-        m = Manifest.walk(self.tpath(path))
+        m = Manifest.walk(t_path(path))
         s = StringIO()
         m.write(s)
         self.assertEqual(s.getvalue(), expect)
 
     def test_missing_raises_ValueError(self):
-        self.assertRaises(ValueError, Manifest.walk, self.tpath("missing"))
+        self.assertRaises(ValueError, Manifest.walk, t_path("missing"))
 
     def test_not_a_dir(self):
-        self.assertRaises(ValueError, Manifest.walk, self.tpath("plain_file"))
+        self.assertRaises(ValueError, Manifest.walk, t_path("plain_file"))
 
     def test_empty_dir(self):
-        emptydir = self.tpath("empty")
+        emptydir = t_path("empty")
         if not os.path.exists(emptydir):
             os.makedirs(emptydir)
         self.must_equal("empty", "")
 
     def test_empty_dir_trailing_slash(self):
-        emptydir = self.tpath("empty")
+        emptydir = t_path("empty")
         if not os.path.exists(emptydir):
             os.makedirs(emptydir)
         self.must_equal("empty/", "")
@@ -271,7 +273,7 @@ class TestManifest_from_walk(unittest.TestCase):
         self.must_equal("two_files", "bar\nfoo\n")
 
     def test_file_and_empty_subdir(self):
-        emptydir = self.tpath("file_and_empty_subdir/subdir")
+        emptydir = t_path("file_and_empty_subdir/subdir")
         if not os.path.exists(emptydir):
             os.makedirs(emptydir)
         self.must_equal("file_and_empty_subdir", "file\nsubdir\n")
@@ -288,7 +290,7 @@ class TestManifest_from_walk(unittest.TestCase):
 
     def must_equal_tar(self, tar_path, expect):
         try:
-            tarfile = self.tpath(tar_path)
+            tarfile = t_path(tar_path)
             tempdir = tempfile.mkdtemp()
             subprocess.check_call(["tar", "-xf", tarfile], cwd = tempdir)
             m = Manifest.walk(tempdir)
