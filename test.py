@@ -183,6 +183,52 @@ class TestManifest_write(unittest.TestCase):
         self.must_equal(["foo", "\tbar", "\t\tbaz"],
                         "XXXfoo\nXXXXbar\nXXXXXbaz\n", indent = "X", level = 3)
 
+class TestManifest_resolve(unittest.TestCase):
+
+    def test_empty(self):
+        m = Manifest()
+        self.assertTrue(m.resolve("") is m)
+
+    def test_single_entry(self):
+        m = Manifest.parse(["foo"])
+        self.assertTrue(m.resolve("") is m)
+        self.assertTrue(m.resolve("foo") is m["foo"])
+
+    def test_missing_is_None(self):
+        m = Manifest.parse(["foo"])
+        self.assertTrue(m.resolve("bar") is None)
+
+    def test_grandchild(self):
+        m = Manifest.parse(["foo", "\tbar"])
+        self.assertTrue(m.resolve("") is m)
+        self.assertTrue(m.resolve("foo") is m["foo"])
+        self.assertTrue(m.resolve("foo/bar") is m["foo"]["bar"])
+
+    def test_dot_path(self):
+        m = Manifest.parse(["foo", "\tbar"])
+        self.assertTrue(m.resolve("./foo") is m["foo"])
+        self.assertTrue(m.resolve("foo/./") is m["foo"])
+        self.assertTrue(m.resolve("foo/./bar") is m["foo"]["bar"])
+        self.assertTrue(m.resolve("./foo/./bar/.") is m["foo"]["bar"])
+        self.assertTrue(m.resolve("./foo/./bar/./") is m["foo"]["bar"])
+
+    def test_dotdot_path(self):
+        m = Manifest.parse(["foo", "\tbar"])
+        self.assertTrue(m.resolve("foo/..") is m)
+        self.assertTrue(m.resolve("foo/../foo") is m["foo"])
+        self.assertTrue(m.resolve("foo/../foo/bar") is m["foo"]["bar"])
+        self.assertTrue(m.resolve("./foo/./bar/..") is m["foo"])
+        self.assertTrue(m.resolve("./foo/bar/../") is m["foo"])
+        self.assertTrue(m.resolve("./foo/bar/../..") is m)
+
+    def test_excessive_dotdot_fails(self):
+        m = Manifest.parse(["foo", "\tbar"])
+        self.assertTrue(m.resolve("..") is None)
+        self.assertTrue(m.resolve("../") is None)
+        self.assertTrue(m.resolve("foo/../..") is None)
+        self.assertTrue(m.resolve("foo/bar/../../..") is None)
+        self.assertTrue(m.resolve("foo/bar/../bar/../../..") is None)
+
 class TestManifest_from_walk(unittest.TestCase):
 
     testdir = os.path.join(os.path.dirname(sys.argv[0]), "t")

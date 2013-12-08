@@ -97,3 +97,18 @@ class Manifest(dict):
         for name, m in sorted(self.iteritems()):
             print >>f, indent * level + name
             m.write(f, level + 1, indent)
+
+    def resolve(self, path):
+        """Resolve a relative pathspec against this Manifest."""
+        try:
+            name, rest = path.split("/", 1)
+        except ValueError:
+            name, rest = path, ""
+
+        special = {
+            "": self,
+            ".": self,
+            "..": self.getparent(),
+        }
+        m = special.get(name, self.get(name))
+        return m.resolve(rest) if (m is not None and rest) else m
