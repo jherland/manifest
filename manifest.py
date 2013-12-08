@@ -69,7 +69,7 @@ class Manifest(dict):
         return top
 
     @classmethod
-    def walk(cls, path):
+    def from_walk(cls, path):
         """Generate a Manifest from the given directory structure.
 
         Recursively walk the directory structure rooted at 'path' and generate

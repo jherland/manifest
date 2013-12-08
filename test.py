@@ -241,19 +241,19 @@ class TestManifest_resolve(unittest.TestCase):
         self.assertTrue(m.resolve("foo/bar/../../..") is None)
         self.assertTrue(m.resolve("foo/bar/../bar/../../..") is None)
 
-class TestManifest_walk(unittest.TestCase):
+class TestManifest_from_walk(unittest.TestCase):
 
     def must_equal(self, path, expect):
-        m = Manifest.walk(t_path(path))
+        m = Manifest.from_walk(t_path(path))
         s = StringIO()
         m.write(s)
         self.assertEqual(s.getvalue(), expect)
 
     def test_missing_raises_ValueError(self):
-        self.assertRaises(ValueError, Manifest.walk, t_path("missing"))
+        self.assertRaises(ValueError, Manifest.from_walk, t_path("missing"))
 
     def test_not_a_dir(self):
-        self.assertRaises(ValueError, Manifest.walk, t_path("plain_file"))
+        self.assertRaises(ValueError, Manifest.from_walk, t_path("plain_file"))
 
     def test_empty_dir(self):
         emptydir = t_path("empty")
@@ -294,7 +294,7 @@ class TestManifest_walk(unittest.TestCase):
             tempdir = tempfile.mkdtemp()
             subprocess.check_call(["tar", "-xf", t_path(tar_path)],
                                   cwd = tempdir)
-            m = Manifest.walk(tempdir)
+            m = Manifest.from_walk(tempdir)
             s = StringIO()
             m.write(s)
             self.assertEqual(s.getvalue(), expect)
@@ -323,7 +323,7 @@ class TestManifest_walk(unittest.TestCase):
 class TestManifest_iterpaths(unittest.TestCase):
 
     def must_equal(self, path, expect):
-        m = Manifest.walk(t_path(path))
+        m = Manifest.from_walk(t_path(path))
         self.assertEquals(list(m.iterpaths()), expect)
 
     def test_empty(self):
@@ -367,16 +367,16 @@ class TestManifest_merge(unittest.TestCase):
         self.assertEqual(list(Manifest.merge(m)), [])
 
     def test_two_empties(self):
-        m1, m2 = Manifest(), Manifest.walk(t_path("empty"))
+        m1, m2 = Manifest(), Manifest.from_walk(t_path("empty"))
         self.assertEqual(list(Manifest.merge(m1, m2)), [])
 
     def test_one_single_file(self):
-        m = Manifest.walk(t_path("single_file"))
+        m = Manifest.from_walk(t_path("single_file"))
         self.assertEqual(list(Manifest.merge(m)), [("foo",)])
 
     def test_two_single_file(self):
-        m1, m2 = Manifest.walk(t_path("single_file")), Manifest.parse(["foo"])
-        self.assertEqual(list(Manifest.merge(m1, m2)), [("foo", "foo")])
+        ms = Manifest.from_walk(t_path("single_file")), Manifest.parse(["foo"])
+        self.assertEqual(list(Manifest.merge(*ms)), [("foo", "foo")])
 
     def test_three_different_singles(self):
         m1, m2, m3 = map(Manifest.parse, (["foo"], ["bar"], ["baz"]))
@@ -396,7 +396,7 @@ class TestManifest_merge(unittest.TestCase):
             ("same", "same", "same")])
 
     def test_empty_subdir_vs_nonepty_subdir(self):
-        ms = map(Manifest.walk,
+        ms = map(Manifest.from_walk,
                  (t_path("file_and_empty_subdir"), t_path("file_and_subdir")))
         self.assertEqual(list(Manifest.merge(*ms)), [
             ("file", "file"), ("subdir", "subdir"), (None, "subdir/foo")])
@@ -408,13 +408,13 @@ class TestManifest_diff(unittest.TestCase):
             tempdir = tempfile.mkdtemp()
             subprocess.check_call(["tar", "-xf", t_path(tar_path)],
                                   cwd = tempdir)
-            return Manifest.walk(tempdir)
+            return Manifest.from_walk(tempdir)
         finally:
             shutil.rmtree(tempdir)
 
     def test_diff_empties(self):
         m1 = Manifest()
-        m2 = Manifest.walk(t_path("empty"))
+        m2 = Manifest.from_walk(t_path("empty"))
         m3 = self.from_tar(t_path("empty.tar"))
         self.assertEquals(list(Manifest.diff(m1, m2)), [])
         self.assertEquals(list(Manifest.diff(m1, m3)), [])
@@ -432,7 +432,7 @@ class TestManifest_diff(unittest.TestCase):
             d = os.path.splitext(t)[0]
             if not os.path.isdir(d): # Need corresponding dir
                 continue
-            m1 = Manifest.walk(d)
+            m1 = Manifest.from_walk(d)
             m2 = self.from_tar(t)
             self.assertEqual(list(Manifest.diff(m1, m2)), [])
             self.assertEqual(list(Manifest.diff(m2, m1)), [])
