@@ -124,6 +124,7 @@ class Manifest(dict):
         return m.resolve(rest) if (m is not None and rest) else m
 
     def iterpaths(self):
+        """Generate relative paths from this manifests and all its children."""
         for p, m in sorted(self.iteritems()):
             yield p
             for c in m.iterpaths():
