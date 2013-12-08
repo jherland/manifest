@@ -460,5 +460,33 @@ class TestManifest_diff(unittest.TestCase):
         self.assertEqual(list(Manifest.diff(m1, m2)), [(None, "foo")])
         self.assertEqual(list(Manifest.diff(m2, m1)), [("foo", None)])
 
+    def test_diff_single_file_vs_two_files(self):
+        m1 = self.from_tar("single_file.tar")
+        m2 = self.from_tar("two_files.tar")
+        self.assertEqual(list(Manifest.diff(m1, m2)), [(None, "bar")])
+        self.assertEqual(list(Manifest.diff(m2, m1)), [("bar", None)])
+
+    def test_diff_two_files_vs_file_and_empty_subdir(self):
+        m1 = self.from_tar("two_files.tar")
+        m2 = self.from_tar("file_and_empty_subdir.tar")
+        self.assertEqual(list(Manifest.diff(m1, m2)), [
+            ("bar", None), (None, "file"), ("foo", None), (None, "subdir")])
+        self.assertEqual(list(Manifest.diff(m2, m1)), [
+            (None, "bar"), ("file", None), (None, "foo"), ("subdir", None)])
+
+    def test_diff_file_and_empty_subdir_vs_file_and_subdir(self):
+        m1 = self.from_tar("file_and_empty_subdir.tar")
+        m2 = self.from_tar("file_and_subdir.tar")
+        self.assertEqual(list(Manifest.diff(m1, m2)), [(None, "subdir/foo")])
+        self.assertEqual(list(Manifest.diff(m2, m1)), [("subdir/foo", None)])
+
+    def test_diff_two_files_vs_files_at_many_levels(self):
+        m1 = self.from_tar("two_files.tar")
+        m2 = self.from_tar("files_at_many_levels.tar")
+        self.assertEqual(list(Manifest.diff(m1, m2)), [
+            (None, "baz"), (None, "baz/bar"), (None, "baz/baz"),
+            (None, "baz/baz/bar"), (None, "baz/baz/baz"), (None, "baz/baz/foo"),
+            (None, "baz/foo")])
+
 if __name__ == '__main__':
     unittest.main()
