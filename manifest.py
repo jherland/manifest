@@ -1,8 +1,19 @@
 #!/usr/bin/env python2
 
-import unittest
+import weakref
 
-class Manifest(object):
+class Manifest(dict):
+    """Encapsulate a description of a file hierarchy.
+
+    This is equivalent to a hierachical dictionary, where each key is an entry
+    (i.e. file or direcotry) in the file hierachy, and the corresponding value
+    is the Manifest object representing the children of that entry.
+
+    In addition to merely wrapping a dict of Manifest objects, each Manifest
+    also has a parent attribute that references the Manifest object of the
+    parent (or None for a toplevel Manifest object).
+    """
+
     @staticmethod
     def parse_lines(f):
         """Return (indent, token) for each logical line in the given file."""
@@ -28,12 +39,45 @@ class Manifest(object):
             token = token.rstrip() # strip trailing WS
             yield(len(indents) - 1, token)
 
+    @classmethod
+    def parse(cls, f):
+        """Parse the given file and return the resulting toplevel Manifest."""
+        prev = cur = top = cls()
+        level = 0
+        for indent, token in cls.parse_lines(f):
+            if indent > level:
+                # drill into the previous entry
+                cur = prev
+                level += 1
+                assert indent == level
+            elif indent < level:
+                while indent < level:
+                    cur = cur.getparent()
+                    assert cur is not None
+                    level -= 1
+                assert indent == level
+
+            assert token not in cur
+            prev = cur.setdefault(token, cls())
+            prev.setparent(cur)
+        return top
+
+    def __init__(self, *args, **kwargs):
+        dict.__init__(self, *args, **kwargs)
+        self._parent = None
+
+    def getparent(self):
+        return self._parent() if self._parent is not None else None
+
+    def setparent(self, manifest):
+        self._parent = weakref.ref(manifest) if manifest is not None else None
 
 # Tests start here
 
+import unittest
 from cStringIO import StringIO
 
-class TestManifest(unittest.TestCase):
+class TestManifest_parse_lines(unittest.TestCase):
 
     # Helpers
 
@@ -91,6 +135,87 @@ class TestManifest(unittest.TestCase):
     def test_token_with_spaces(self):
         self.must_equal("This is a token with spaces",
                         [(0, "This is a token with spaces")])
+
+    def test_token_with_spaces(self):
+        self.must_equal("This is a token with spaces",
+                        [(0, "This is a token with spaces")])
+
+class TestManifest_parse(unittest.TestCase):
+
+    def test_empty(self):
+        m = Manifest.parse(StringIO(""))
+        self.assertEqual(len(m), 0)
+
+    def test_single_word(self):
+        m = Manifest.parse(StringIO("foo"))
+        self.assertEqual(len(m), 1)
+        self.assertEqual(m.keys(), ["foo"])
+        self.assertEqual(len(m["foo"]), 0)
+
+    def test_two_word(self):
+        m = Manifest.parse(StringIO("foo\nbar"))
+        self.assertEqual(len(m), 2)
+        self.assertEqual(sorted(m.keys()), ["bar", "foo"])
+        self.assertEqual(len(m["foo"]), 0)
+        self.assertEqual(len(m["bar"]), 0)
+
+    def test_entry_with_child(self):
+        m = Manifest.parse(StringIO("foo\n\tbar"))
+        self.assertEqual(len(m), 1)
+        self.assertEqual(m.keys(), ["foo"])
+        self.assertEqual(len(m["foo"]), 1)
+        self.assertEqual(m["foo"].keys(), ["bar"])
+        self.assertEqual(len(m["foo"]["bar"]), 0)
+
+    def test_entry_with_children(self):
+        m = Manifest.parse(StringIO("foo\n\tbar\n\tbaz"))
+        self.assertEqual(len(m), 1)
+        self.assertEqual(m.keys(), ["foo"])
+        self.assertEqual(len(m["foo"]), 2)
+        self.assertEqual(sorted(m["foo"].keys()), ["bar", "baz"])
+        self.assertEqual(len(m["foo"]["bar"]), 0)
+        self.assertEqual(len(m["foo"]["baz"]), 0)
+
+    def test_entry_with_child_and_sibling(self):
+        m = Manifest.parse(StringIO("foo\n\tbar\nfooz"))
+        self.assertEqual(len(m), 2)
+        self.assertEqual(sorted(m.keys()), ["foo", "fooz"])
+        self.assertEqual(len(m["foo"]), 1)
+        self.assertEqual(sorted(m["foo"].keys()), ["bar"])
+        self.assertEqual(len(m["foo"]["bar"]), 0)
+        self.assertEqual(len(m["fooz"]), 0)
+
+    def test_entry_with_grandchild(self):
+        m = Manifest.parse(StringIO("foo\n\tbar\n\t\tbaz"))
+        self.assertEqual(len(m), 1)
+        self.assertEqual(m.keys(), ["foo"])
+        self.assertEqual(len(m["foo"]), 1)
+        self.assertEqual(m["foo"].keys(), ["bar"])
+        self.assertEqual(len(m["foo"]["bar"]), 1)
+        self.assertEqual(m["foo"]["bar"].keys(), ["baz"])
+        self.assertEqual(len(m["foo"]["bar"]["baz"]), 0)
+
+    def test_entry_with_grandchild_and_sibling(self):
+        m = Manifest.parse(StringIO("foo\n\tbar\n\t\tbaz\nxyzzy"))
+        self.assertEqual(len(m), 2)
+        self.assertEqual(sorted(m.keys()), ["foo", "xyzzy"])
+        self.assertEqual(len(m["foo"]), 1)
+        self.assertEqual(m["foo"].keys(), ["bar"])
+        self.assertEqual(len(m["foo"]["bar"]), 1)
+        self.assertEqual(m["foo"]["bar"].keys(), ["baz"])
+        self.assertEqual(len(m["foo"]["bar"]["baz"]), 0)
+        self.assertEqual(len(m["xyzzy"]), 0)
+
+    def test_parent_refs(self):
+        m = Manifest.parse(StringIO("foo\n\tbar"))
+        self.assertEqual(len(m), 1)
+        self.assertEqual(m.keys(), ["foo"])
+        self.assertEqual(len(m["foo"]), 1)
+        self.assertEqual(m["foo"].keys(), ["bar"])
+        self.assertEqual(len(m["foo"]["bar"]), 0)
+        self.assertEqual(m.getparent(), None)
+        self.assertEqual(m["foo"].getparent(), m)
+        self.assertEqual(m["foo"]["bar"].getparent(), m["foo"])
 
 if __name__ == '__main__':
     unittest.main()
