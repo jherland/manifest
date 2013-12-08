@@ -51,8 +51,7 @@ class Manifest(dict):
         prev = cur = top = cls()
         level = 0
         for indent, token in cls.parse_lines(f):
-            if indent > level:
-                # drill into the previous entry
+            if indent > level: # drill into the previous entry
                 cur = prev
                 level += 1
                 assert indent == level
@@ -74,12 +73,17 @@ class Manifest(dict):
         if not os.path.isdir(path):
             raise ValueError("'%s' is not a directory" % (path))
 
-        cur = top = cls()
+        top, top_path = cls(), path.rstrip(os.sep)
         for dirpath, dirnames, filenames in os.walk(path):
-            print dirpath, dirnames, filenames
+            assert dirpath.startswith(top_path)
+            rel_path = dirpath[len(top_path):].lstrip(os.sep)
+            m = top.resolve(rel_path)
+            assert m is not None
+
             for name in filenames + dirnames:
-                assert name not in cur
-                cur[name] = cls()
+                assert name not in m
+                new = m.setdefault(name, cls())
+                new.setparent(m)
         return top
 
     def __init__(self, *args, **kwargs):

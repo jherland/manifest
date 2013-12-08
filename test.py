@@ -254,6 +254,12 @@ class TestManifest_from_walk(unittest.TestCase):
             os.makedirs(emptydir)
         self.must_equal("empty", "")
 
+    def test_empty_dir_trailing_slash(self):
+        emptydir = self.tpath("empty")
+        if not os.path.exists(emptydir):
+            os.makedirs(emptydir)
+        self.must_equal("empty/", "")
+
     def test_single_file(self):
         self.must_equal("single_file", "foo\n")
 
@@ -265,6 +271,16 @@ class TestManifest_from_walk(unittest.TestCase):
         if not os.path.exists(emptydir):
             os.makedirs(emptydir)
         self.must_equal("file_and_empty_subdir", "file\nsubdir\n")
+
+    def test_file_and_subdir(self):
+        self.must_equal("file_and_subdir", "file\nsubdir\n\tfoo\n")
+
+    def test_file_and_subdir_trailing_slash(self):
+        self.must_equal("file_and_subdir/", "file\nsubdir\n\tfoo\n")
+
+    def test_files_at_many_levels(self):
+        self.must_equal("files_at_many_levels",
+            "bar\nbaz\n\tbar\n\tbaz\n\t\tbar\n\t\tbaz\n\t\tfoo\n\tfoo\nfoo\n")
 
 if __name__ == '__main__':
     unittest.main()
