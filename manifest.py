@@ -122,3 +122,9 @@ class Manifest(dict):
         }
         m = special.get(name, self.get(name))
         return m.resolve(rest) if (m is not None and rest) else m
+
+    def iterpaths(self):
+        for p, m in sorted(self.iteritems()):
+            yield p
+            for c in m.iterpaths():
+                yield p + "/" + c

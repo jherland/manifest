@@ -319,5 +319,42 @@ class TestManifest_walk(unittest.TestCase):
         self.must_equal_tar("files_at_many_levels.tar",
             "bar\nbaz\n\tbar\n\tbaz\n\t\tbar\n\t\tbaz\n\t\tfoo\n\tfoo\nfoo\n")
 
+class TestManifest_iterpaths(unittest.TestCase):
+
+    def must_equal(self, path, expect):
+        m = Manifest.walk(t_path(path))
+        self.assertEquals(list(m.iterpaths()), expect)
+
+    def test_empty(self):
+        self.must_equal("empty", [])
+
+    def test_single_file(self):
+        self.must_equal("single_file", ["foo"])
+
+    def test_two_files(self):
+        self.must_equal("two_files", ["bar", "foo"])
+
+    def test_file_and_empty_subdir(self):
+        self.must_equal("file_and_empty_subdir", ["file", "subdir"])
+
+    def test_file_and_subdir(self):
+        self.must_equal("file_and_subdir", ["file", "subdir", "subdir/foo"])
+
+    def test_file_and_subdir_trailing_slash(self):
+        self.must_equal("file_and_subdir/", ["file", "subdir", "subdir/foo"])
+
+    def test_files_at_many_levels(self):
+        self.must_equal("files_at_many_levels", [
+            "bar",
+            "baz",
+            "baz/bar",
+            "baz/baz",
+            "baz/baz/bar",
+            "baz/baz/baz",
+            "baz/baz/foo",
+            "baz/foo",
+            "foo",
+        ])
+
 if __name__ == '__main__':
     unittest.main()
