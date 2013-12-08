@@ -4,6 +4,9 @@ import sys
 import os
 import unittest
 from cStringIO import StringIO
+import tempfile
+import shutil
+import subprocess
 
 from manifest import Manifest
 
@@ -231,7 +234,8 @@ class TestManifest_resolve(unittest.TestCase):
 
 class TestManifest_from_walk(unittest.TestCase):
 
-    testdir = os.path.join(os.path.dirname(sys.argv[0]), "t")
+    testdir = os.path.normpath(os.path.join(os.getcwd(),
+                                            os.path.dirname(sys.argv[0]), "t"))
 
     def tpath(self, path):
         return os.path.join(self.testdir, path)
@@ -280,6 +284,37 @@ class TestManifest_from_walk(unittest.TestCase):
 
     def test_files_at_many_levels(self):
         self.must_equal("files_at_many_levels",
+            "bar\nbaz\n\tbar\n\tbaz\n\t\tbar\n\t\tbaz\n\t\tfoo\n\tfoo\nfoo\n")
+
+    def must_equal_tar(self, tar_path, expect):
+        try:
+            tarfile = self.tpath(tar_path)
+            tempdir = tempfile.mkdtemp()
+            subprocess.check_call(["tar", "-xf", tarfile], cwd = tempdir)
+            m = Manifest.walk(tempdir)
+            s = StringIO()
+            m.write(s)
+            self.assertEqual(s.getvalue(), expect)
+        finally:
+            shutil.rmtree(tempdir)
+
+    def test_empty_tar(self):
+        self.must_equal_tar("empty.tar", "")
+
+    def test_single_file_tar(self):
+        self.must_equal_tar("single_file.tar", "foo\n")
+
+    def test_two_files_tar(self):
+        self.must_equal_tar("two_files.tar", "bar\nfoo\n")
+
+    def test_file_and_empty_subdir_tar(self):
+        self.must_equal_tar("file_and_empty_subdir.tar", "file\nsubdir\n")
+
+    def test_file_and_subdir_tar(self):
+        self.must_equal_tar("file_and_subdir.tar", "file\nsubdir\n\tfoo\n")
+
+    def test_files_at_many_levels_tar(self):
+        self.must_equal_tar("files_at_many_levels.tar",
             "bar\nbaz\n\tbar\n\tbaz\n\t\tbar\n\t\tbaz\n\t\tfoo\n\tfoo\nfoo\n")
 
 if __name__ == '__main__':
