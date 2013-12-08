@@ -170,15 +170,15 @@ class Manifest(dict):
             yield tuple(ret)
             paths = next_paths
 
-    def diff(self, other):
-        """Compare this manifest against another.
+    @classmethod
+    def diff(cls, *args):
+        """Generate sequence of differences between two or more manifests.
 
-        Generate a sequence of the differences between self and other. Each
-        generated item is a three-tuple (self_path, other_path, details), where
-        self_path is a relative path into self, or None. other_path is the same
-        for 'other'. details is a string describing the difference between
-        self_path and/or other_path. This might also be None.
-        Obviously, if nothing is generated, self and other are considered
-        equal/equivalent.
+        For the given manifests (ma, mb, mc, ...), generate a sequence of tuples
+        (pa, pb, pc, ...) whenever a path px is encountered that is not present
+        in all manifests. This is equivalent to filtering merge() for tuples
+        where all px are present.
         """
-        return [None] if cmp(self, other) else []
+        for t in cls.merge(*args):
+            if filter(lambda p: p is None, t): # One or more is None
+                yield t

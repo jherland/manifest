@@ -416,12 +416,12 @@ class TestManifest_diff(unittest.TestCase):
         m1 = Manifest()
         m2 = Manifest.walk(t_path("empty"))
         m3 = self.from_tar(t_path("empty.tar"))
-        self.assertEquals(list(m1.diff(m2)), [])
-        self.assertEquals(list(m1.diff(m3)), [])
-        self.assertEquals(list(m2.diff(m1)), [])
-        self.assertEquals(list(m2.diff(m3)), [])
-        self.assertEquals(list(m3.diff(m1)), [])
-        self.assertEquals(list(m3.diff(m2)), [])
+        self.assertEquals(list(Manifest.diff(m1, m2)), [])
+        self.assertEquals(list(Manifest.diff(m1, m3)), [])
+        self.assertEquals(list(Manifest.diff(m2, m1)), [])
+        self.assertEquals(list(Manifest.diff(m2, m3)), [])
+        self.assertEquals(list(Manifest.diff(m3, m1)), [])
+        self.assertEquals(list(Manifest.diff(m3, m2)), [])
         self.assertEquals(m1, m2)
         self.assertEquals(m2, m3)
         self.assertEquals(m3, m1)
@@ -434,8 +434,8 @@ class TestManifest_diff(unittest.TestCase):
                 continue
             m1 = Manifest.walk(d)
             m2 = self.from_tar(t)
-            self.assertEqual(list(m1.diff(m2)), [])
-            self.assertEqual(list(m2.diff(m1)), [])
+            self.assertEqual(list(Manifest.diff(m1, m2)), [])
+            self.assertEqual(list(Manifest.diff(m2, m1)), [])
             self.assertEqual(m1, m2)
             self.assertEqual(m2, m1)
 
@@ -446,12 +446,19 @@ class TestManifest_diff(unittest.TestCase):
         for t1, t2 in zip(tars, shifted):
             m1 = self.from_tar(t1)
             m2 = self.from_tar(t2)
-            self.assertNotEqual(len(m1.diff(m2)), 0)
-            self.assertNotEqual(len(m2.diff(m1)), 0)
+            self.assertTrue(list(Manifest.diff(m1, m2)))
+            self.assertTrue(list(Manifest.diff(m2, m1)))
             self.assertNotEqual(m1, m2)
             self.assertNotEqual(m2, m1)
 
-            self.assertEqual(len(m1.diff(m2)), len(m2.diff(m1)))
+            self.assertEqual(len(list(Manifest.diff(m1, m2))),
+                             len(list(Manifest.diff(m2, m1))))
+
+    def test_diff_empty_vs_single_file(self):
+        m1 = self.from_tar("empty.tar")
+        m2 = self.from_tar("single_file.tar")
+        self.assertEqual(list(Manifest.diff(m1, m2)), [(None, "foo")])
+        self.assertEqual(list(Manifest.diff(m2, m1)), [("foo", None)])
 
 if __name__ == '__main__':
     unittest.main()
