@@ -77,3 +77,9 @@ class Manifest(dict):
 
     def setparent(self, manifest):
         self._parent = weakref.ref(manifest) if manifest is not None else None
+
+    def write(self, f, level = 0, indent = "\t"):
+        """Write this Manifest in parse()able text format to the given file."""
+        for name, m in sorted(self.iteritems()):
+            print >>f, indent * level + name
+            m.write(f, level + 1, indent)
