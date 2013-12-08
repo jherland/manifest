@@ -1,6 +1,7 @@
 #!/usr/bin/env python2
 
 import weakref
+import itertools
 
 class Manifest(dict):
     """Encapsulate a description of a file hierarchy.
@@ -146,23 +147,18 @@ class Manifest(dict):
         Manifests. All elements from all manifests will occur exactly once in
         the generated sequence.
         """
-        def next_or_none(gen):
-            try:
-                return next(gen)
-            except StopIteration:
-                return None
-
+        none_iter = itertools.repeat(None)
         exists = lambda p: p is not None
 
-        gens = [m.iterpaths() for m in args]
-        paths = [next_or_none(gen) for gen in gens]
+        gens = [itertools.chain(m.iterpaths(), none_iter) for m in args]
+        paths = [next(gen) for gen in gens]
         while filter(exists, paths):
             least = min(filter(exists, paths))
             ret, next_paths = [], []
             for p, gen in zip(paths, gens):
                 if p == least:
                     ret.append(p)
-                    next_paths.append(next_or_none(gen))
+                    next_paths.append(next(gen))
                 else:
                     ret.append(None)
                     next_paths.append(p)
