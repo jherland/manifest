@@ -130,6 +130,46 @@ class Manifest(dict):
             for c in m.iterpaths():
                 yield p + "/" + c
 
+    @classmethod
+    def merge(cls, *args):
+        """Generate sequence of matching path tuples from multiple manifests.
+
+        The given arguments are one or more Manifests (ma, mb, mc, ...). For
+        each given manifest mx call .iterpaths() to generate a sequence of
+        relative paths. Merge these paths across manifests, into a sorted
+        sequence of tuples (pa, pb, pc, ...), where each px is either a path
+        from the corresponding Manifest mx, or None if the corresponding mx
+        does not contain that path. For a given tuple in the result sequence,
+        all present items (i.e. those that are not None) will be identical, and
+        there will be at least one present item. The total length of the
+        resulting sequence is equal to the length of the superset of the given
+        Manifests. All elements from all manifests will occur exactly once in
+        the generated sequence.
+        """
+        def next_or_none(gen):
+            try:
+                return next(gen)
+            except StopIteration:
+                return None
+
+        exists = lambda p: p is not None
+
+        gens = [m.iterpaths() for m in args]
+        paths = [next_or_none(gen) for gen in gens]
+        while filter(exists, paths):
+            least = min(filter(exists, paths))
+            ret, next_paths = [], []
+            for p, gen in zip(paths, gens):
+                if p == least:
+                    ret.append(p)
+                    next_paths.append(next_or_none(gen))
+                else:
+                    ret.append(None)
+                    next_paths.append(p)
+            assert filter(exists, ret)
+            yield tuple(ret)
+            paths = next_paths
+
     def diff(self, other):
         """Compare this manifest against another.
 

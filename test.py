@@ -357,6 +357,50 @@ class TestManifest_iterpaths(unittest.TestCase):
             "foo",
         ])
 
+class TestManifest_merge(unittest.TestCase):
+
+    def test_nothing(self):
+        self.assertEqual(list(Manifest.merge()), [])
+
+    def test_one_empty(self):
+        m = Manifest()
+        self.assertEqual(list(Manifest.merge(m)), [])
+
+    def test_two_empties(self):
+        m1, m2 = Manifest(), Manifest.walk(t_path("empty"))
+        self.assertEqual(list(Manifest.merge(m1, m2)), [])
+
+    def test_one_single_file(self):
+        m = Manifest.walk(t_path("single_file"))
+        self.assertEqual(list(Manifest.merge(m)), [("foo",)])
+
+    def test_two_single_file(self):
+        m1, m2 = Manifest.walk(t_path("single_file")), Manifest.parse(["foo"])
+        self.assertEqual(list(Manifest.merge(m1, m2)), [("foo", "foo")])
+
+    def test_three_different_singles(self):
+        m1, m2, m3 = map(Manifest.parse, (["foo"], ["bar"], ["baz"]))
+        self.assertEqual(list(Manifest.merge(m1, m2, m3)), [
+            (None, "bar", None), (None, None, "baz"), ("foo", None, None)])
+
+    def test_three_mixed_singles(self):
+        m1, m2, m3 = map(Manifest.parse, (["foo"], ["bar"], ["foo"]))
+        self.assertEqual(list(Manifest.merge(m1, m2, m3)), [
+            (None, "bar", None), ("foo", None, "foo")])
+
+    def test_three_with_overlap(self):
+        ms = map(Manifest.parse,
+                 (["foo", "same"], ["bar", "same"], ["baz", "same"]))
+        self.assertEqual(list(Manifest.merge(*ms)), [
+            (None, "bar", None), (None, None, "baz"), ("foo", None, None),
+            ("same", "same", "same")])
+
+    def test_empty_subdir_vs_nonepty_subdir(self):
+        ms = map(Manifest.walk,
+                 (t_path("file_and_empty_subdir"), t_path("file_and_subdir")))
+        self.assertEqual(list(Manifest.merge(*ms)), [
+            ("file", "file"), ("subdir", "subdir"), (None, "subdir/foo")])
+
 class TestManifest_diff(unittest.TestCase):
 
     def from_tar(self, tar_path):
