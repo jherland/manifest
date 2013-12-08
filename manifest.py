@@ -68,6 +68,13 @@ class Manifest(dict):
             prev.setparent(cur)
         return top
 
+    @classmethod
+    def walk(cls, path):
+        import os
+        if not os.path.isdir(path):
+            raise ValueError("'%s' is not a directory" % (path))
+        return cls()
+
     def __init__(self, *args, **kwargs):
         dict.__init__(self, *args, **kwargs)
         self._parent = None

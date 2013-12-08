@@ -1,5 +1,7 @@
 #!/usr/bin/env python2
 
+import sys
+import os
 import unittest
 from cStringIO import StringIO
 
@@ -180,6 +182,32 @@ class TestManifest_write(unittest.TestCase):
     def test_supply_level(self):
         self.must_equal(["foo", "\tbar", "\t\tbaz"],
                         "XXXfoo\nXXXXbar\nXXXXXbaz\n", indent = "X", level = 3)
+
+class TestManifest_from_walk(unittest.TestCase):
+
+    testdir = os.path.join(os.path.dirname(sys.argv[0]), "t")
+
+    def tpath(self, path):
+        return os.path.join(self.testdir, path)
+
+    def must_equal(self, path, expect):
+        m = Manifest.walk(self.tpath(path))
+        s = StringIO()
+        m.write(s)
+        self.assertEqual(s.getvalue(), expect)
+
+    def test_missing_raises_ValueError(self):
+        self.assertRaises(ValueError, Manifest.walk, self.tpath("missing"))
+
+    def test_not_a_dir(self):
+        self.assertRaises(ValueError, Manifest.walk, self.tpath("plain_file"))
+
+    def test_empty_dir(self):
+        emptydir = self.tpath("empty")
+        if not os.path.exists(emptydir):
+            os.makedirs(emptydir)
+        self.must_equal("empty", "")
+
 
 if __name__ == '__main__':
     unittest.main()
