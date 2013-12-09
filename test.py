@@ -626,6 +626,47 @@ class TestManifest_merge(unittest.TestCase):
                 ("2bar", "def", "456"),
                 ("3baz", "ghi", "789")])
 
+    def test_nonrecursive(self):
+        m1 = Manifest.parse(["bar", "foo", "  bar", "  foo"])
+        m2 = Manifest.parse(["foo", "  foo", "xyzzy"])
+        m3 = Manifest.parse(["foo", "  bar", "    baz", "  foo", "    foo"])
+        self.assertEqual(list(Manifest.merge(m1, m2, m3)), [
+            ("bar", None, None),
+            ("foo", "foo", "foo"),
+            ("foo/bar", None, "foo/bar"),
+            (None, None, "foo/bar/baz"),
+            ("foo/foo", "foo/foo", "foo/foo"),
+            (None, None, "foo/foo/foo"),
+            (None, "xyzzy", None)])
+
+        # now without recursion
+        self.assertEqual(list(Manifest.merge(m1, m2, m3, recursive = False)), [
+            ("bar", None, None),
+            ("foo", "foo", "foo"),
+            (None, "xyzzy", None)])
+
+        # and finally with selective recursion (only recurse into "foo"s)
+        actual = []
+        gen = Manifest.merge(m1, m2, m3, recursive = False)
+        try:
+            t = gen.next()
+            while True:
+                actual.append(t)
+                if "foo" in t:
+                    t = gen.send(True)
+                else:
+                    t = gen.next()
+        except StopIteration:
+            pass
+
+        #self.assertEqual(actual, [
+            #("bar", None, None),
+            #("foo", "foo", "foo"),
+            #("foo/bar", None, "foo/bar"),
+            #("foo/foo", "foo/foo", "foo/foo"),
+            #(None, None, "foo/foo/foo"),
+            #(None, "xyzzy", None)])
+
 class TestManifest_diff(unittest.TestCase):
 
     def from_tar(self, tar_path):

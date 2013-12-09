@@ -135,7 +135,7 @@ class Manifest(dict):
             for x in self[name].walk(path + [name]):
                 yield x
 
-    def paths(self, recursive = True):
+    def paths(self, recursive = True, never_stop = False):
         """Generate relative paths from this manifests and all its children.
 
         The 'recursive' argument determines whether to recurse into child
@@ -143,6 +143,10 @@ class Manifest(dict):
         send()ing True into a yield to force recursion into that node, or
         send()ing False into a yield to force recursion to be skipped for that
         node.
+
+        If 'never_stop' is true, keep yielding None forever instead of raising
+        StopIteration. The caller is responsible for aborting the iteration at
+        an appropriate time.
         """
         for path, names in self.walk():
             if not path: # skip top-level/empty path
@@ -152,6 +156,9 @@ class Manifest(dict):
                 recurse = recursive
             if not recurse:
                 del names[:]
+        if never_stop:
+            while True:
+                yield None
 
     @classmethod
     def merge(cls, *args, **kwargs):
@@ -170,30 +177,34 @@ class Manifest(dict):
         given Manifests (again, using 'key' to discern between nodes). All
         elements from all manifests will occur exactly once in the generated
         sequence, and in sorted order.
+
+        If you need to change the default recursive behavior of the manifests'
+        .paths() invocation, you can pass the 'recursive' keyword argument.
+        You may also send() True/False to a yield to force recursion on/off for
+        that set of nodes.
         """
         key = kwargs.get("key", lambda px: px) # use path itself as default key
+        recursive = kwargs.get("recursive", True)
 
         # prevent StopIteration: make all generators repeat None ad infinitum.
         # detect end of overall iteration when _all_ generators return None.
-        none_iter = itertools.repeat(None)
-        gens = [itertools.chain(m.paths(), none_iter) for m in args]
+        gens = [m.paths(never_stop = True) for m in args]
 
         present = lambda p: p is not None # predicate for present entries
 
-        paths = [next(gen) for gen in gens] # first line of contestants
+        paths = [gen.next() for gen in gens] # first line of contestants
         while filter(present, paths): # there are still contestants left
             ticket = min(key(px) for px in paths if present(px)) # perform draw
-            winners, losers = [], [] # get ready to classify
-            for p, gen in zip(paths, gens): # line up contestants and generators
-                if key(p) == ticket: # winner
-                    winners.append(p)
-                    losers.append(next(gen)) # get next contestant
-                else: # loser
-                    winners.append(None)
-                    losers.append(p)
+            winners = [(p if key(p) == ticket else None) for p in paths]
             assert filter(present, winners) # at least one winner
-            yield tuple(winners)
-            paths = losers # prepare for next round
+            recurse = (yield tuple(winners))
+            if recurse is None:
+                recurse = recursive
+            next_round = []
+            for w, p, g in zip(winners, paths, gens):
+                # if p is a winner, get next round's player from g, else reuse p
+                next_round.append(p if w is None else g.send(recurse))
+            paths = next_round # prepare for next round
 
     @classmethod
     def diff(cls, *args):
