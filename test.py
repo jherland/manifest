@@ -382,6 +382,147 @@ class TestManifest_walk_visits_all_paths(unittest.TestCase):
                 del names[:]
         self.assertEquals(result, ["", "bar", "baz", "foo"])
 
+class TestManifest_walk_selective_recurse(unittest.TestCase):
+
+    def setUp(self):
+        self.m = Manifest.parse("""\
+            a
+                a
+                    a
+                    b
+                    c
+                b
+                    a
+                    b
+                    c
+                c
+                    a
+                    b
+                    c
+            b
+                a
+                    a
+                    b
+                    c
+                b
+                    a
+                    b
+                    c
+                c
+                    a
+                    b
+                    c
+            c
+                a
+                    a
+                    b
+                    c
+                b
+                    a
+                    b
+                    c
+                c
+                    a
+                    b
+                    c
+            """.split("\n"))
+
+        self.all = ["",
+            "a", "a/a", "a/a/a", "a/a/b", "a/a/c",
+                 "a/b", "a/b/a", "a/b/b", "a/b/c",
+                 "a/c", "a/c/a", "a/c/b", "a/c/c",
+            "b", "b/a", "b/a/a", "b/a/b", "b/a/c",
+                 "b/b", "b/b/a", "b/b/b", "b/b/c",
+                 "b/c", "b/c/a", "b/c/b", "b/c/c",
+            "c", "c/a", "c/a/a", "c/a/b", "c/a/c",
+                 "c/b", "c/b/a", "c/b/b", "c/b/c",
+                 "c/c", "c/c/a", "c/c/b", "c/c/c"]
+
+    def check_paths(self, pred, expect):
+        actual = []
+        for path, names in self.m.walk():
+            if pred(path, names):
+                actual.append("/".join(path))
+        self.assertEqual(actual, expect)
+
+    def test_all(self):
+        def modifier(path, names):
+            return True
+        self.check_paths(modifier, self.all)
+
+    def test_none(self):
+        def modifier(path, names):
+            return False
+        self.check_paths(modifier, [])
+
+    def test_first(self):
+        def modifier(path, names):
+            del names[:]
+            return True
+        self.check_paths(modifier, [""])
+
+        def modifier(path, names):
+            return not path
+        self.check_paths(modifier, [""])
+
+    def test_not_first(self):
+        def modifier(path, names):
+            return path
+        self.check_paths(modifier, self.all[1:])
+
+    def test_no_a(self):
+        expect = [
+            "", "b", "b/b", "b/b/b", "b/b/c", "b/c", "b/c/b", "b/c/c",
+            "c", "c/b", "c/b/b", "c/b/c", "c/c", "c/c/b", "c/c/c"]
+        def modifier(path, names):
+            try:
+                del names[names.index("a")]
+            except:
+                pass
+            return True
+        self.check_paths(modifier, expect)
+
+        def modifier(path, names):
+            return "a" not in path
+        self.check_paths(modifier, expect)
+
+    def test_only_a(self):
+        expect = ["", "a", "a/a", "a/a/a"]
+        def modifier(path, names):
+            names[:] = ["a"] if "a" in names else []
+            return True
+        self.check_paths(modifier, expect)
+
+        def modifier(path, names):
+            return not filter(lambda p: p != "a", path)
+        self.check_paths(modifier, expect)
+
+    def test_starts_with_a(self):
+        expect = [
+            "a", "a/a", "a/a/a", "a/a/b", "a/a/c",
+                 "a/b", "a/b/a", "a/b/b", "a/b/c",
+                 "a/c", "a/c/a", "a/c/b", "a/c/c"]
+        def modifier(path, names):
+            if not path:
+                names[:] = ["a"] if "a" in names else []
+                return False
+            else:
+                return True
+        self.check_paths(modifier, expect)
+
+        def modifier(path, names):
+            return path and path[0] == "a"
+        self.check_paths(modifier, expect)
+
+    def test_ends_with_a(self):
+        expect = [
+            "a", "a/a", "a/a/a", "a/b/a", "a/c/a",
+                 "b/a", "b/a/a", "b/b/a", "b/c/a",
+                 "c/a", "c/a/a", "c/b/a", "c/c/a"]
+        def modifier(path, names):
+            return path and path[-1] == "a"
+        self.check_paths(modifier, expect)
+
 class TestManifest_iterpaths(unittest.TestCase):
 
     def must_equal(self, path, expect):
