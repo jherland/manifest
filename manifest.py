@@ -97,6 +97,9 @@ class Manifest(dict):
         dict.__init__(self, *args, **kwargs)
         self._parent = None
 
+    #def __missing__(self, key):
+        #return None
+
     def getparent(self):
         return self._parent() if self._parent is not None else None
 
