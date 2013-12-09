@@ -419,6 +419,18 @@ class TestManifest_iterpaths(unittest.TestCase):
             "foo",
         ])
 
+    def test_nonrecursive(self):
+        m = Manifest.parse("""\
+            foo
+                child1
+                child2
+            bar
+            baz
+                child3
+            """.split("\n"))
+        self.assertEquals(list(m.iterpaths(recursive = False)),
+                          ["bar", "baz", "foo"])
+
 class TestManifest_merge(unittest.TestCase):
 
     def test_nothing(self):

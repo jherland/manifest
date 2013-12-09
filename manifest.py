@@ -135,12 +135,16 @@ class Manifest(dict):
             for x in self[name].walk(path + [name]):
                 yield x
 
-    def iterpaths(self):
+    def iterpaths(self, recursive = True):
         """Generate relative paths from this manifests and all its children."""
-        for p, m in sorted(self.iteritems()):
-            yield p
-            for c in m.iterpaths():
-                yield p + "/" + c
+        for path, names in self.walk():
+            if not path:
+                continue
+            recurse = (yield "/".join(path))
+            if recurse is None:
+                recurse = recursive
+            if not recurse:
+                del names[:]
 
     @classmethod
     def merge(cls, *args):
