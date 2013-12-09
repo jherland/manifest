@@ -616,6 +616,16 @@ class TestManifest_merge(unittest.TestCase):
         self.assertEqual(list(Manifest.merge(*ms)), [
             ("file", "file"), ("subdir", "subdir"), (None, "subdir/foo")])
 
+    def test_custom_key(self):
+        m1 = Manifest.parse(["1foo", "2bar", "3baz"])
+        m2 = Manifest.parse(["abc", "def", "ghi"])
+        m3 = Manifest.parse(["123", "456", "789"])
+        self.assertEqual(
+            list(Manifest.merge(m1, m2, m3, key = lambda px: True)), [
+                ("1foo", "abc", "123"),
+                ("2bar", "def", "456"),
+                ("3baz", "ghi", "789")])
+
 class TestManifest_diff(unittest.TestCase):
 
     def from_tar(self, tar_path):

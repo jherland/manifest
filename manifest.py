@@ -154,39 +154,46 @@ class Manifest(dict):
                 del names[:]
 
     @classmethod
-    def merge(cls, *args):
-        """Generate sequence of matching path tuples from multiple manifests.
+    def merge(cls, *args, **kwargs):
+        """Merge walks across multiple manifests.
 
-        The given arguments are one or more Manifests (ma, mb, mc, ...). For
-        each given manifest mx call .paths() to generate a sequence of
-        relative paths. Merge these paths across manifests, into a sorted
-        sequence of tuples (pa, pb, pc, ...), where each px is either a path
-        from the corresponding Manifest mx, or None if the corresponding mx
-        does not contain that path. For a given tuple in the result sequence,
-        all present items (i.e. those that are not None) will be identical, and
-        there will be at least one present item. The total length of the
-        resulting sequence is equal to the length of the superset of the given
-        Manifests. All elements from all manifests will occur exactly once in
-        the generated sequence.
+        The given args are one or more Manifests (ma, mb, mc, ...). For each
+        given manifest mx, we call .paths() to generate a sequence of relative
+        paths. Merge these paths across manifests (using the given 'key' as a
+        sort key), and generate a sorted sequence of tuples (pa, pb, pc, ...),
+        where each px is either a path from the corresponding Manifest mx, or
+        None if the corresponding mx did not provide a matching path (according
+        to the 'key'). For a given tuple in the result sequence, all present
+        items (i.e. those that are not None) will be equivalent (according to
+        'key'), and there will be at least one present item. The total length
+        of the resulting sequence is equal to the length of the superset of the
+        given Manifests (again, using 'key' to discern between nodes). All
+        elements from all manifests will occur exactly once in the generated
+        sequence, and in sorted order.
         """
-        none_iter = itertools.repeat(None)
-        exists = lambda p: p is not None
+        key = kwargs.get("key", lambda px: px) # use path itself as default key
 
+        # prevent StopIteration: make all generators repeat None ad infinitum.
+        # detect end of overall iteration when _all_ generators return None.
+        none_iter = itertools.repeat(None)
         gens = [itertools.chain(m.paths(), none_iter) for m in args]
-        paths = [next(gen) for gen in gens]
-        while filter(exists, paths):
-            least = min(filter(exists, paths))
-            ret, next_paths = [], []
-            for p, gen in zip(paths, gens):
-                if p == least:
-                    ret.append(p)
-                    next_paths.append(next(gen))
-                else:
-                    ret.append(None)
-                    next_paths.append(p)
-            assert filter(exists, ret)
-            yield tuple(ret)
-            paths = next_paths
+
+        present = lambda p: p is not None # predicate for present entries
+
+        paths = [next(gen) for gen in gens] # first line of contestants
+        while filter(present, paths): # there are still contestants left
+            ticket = min(key(px) for px in paths if present(px)) # perform draw
+            winners, losers = [], [] # get ready to classify
+            for p, gen in zip(paths, gens): # line up contestants and generators
+                if key(p) == ticket: # winner
+                    winners.append(p)
+                    losers.append(next(gen)) # get next contestant
+                else: # loser
+                    winners.append(None)
+                    losers.append(p)
+            assert filter(present, winners) # at least one winner
+            yield tuple(winners)
+            paths = losers # prepare for next round
 
     @classmethod
     def diff(cls, *args):
