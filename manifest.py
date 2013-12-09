@@ -124,6 +124,17 @@ class Manifest(dict):
         m = special.get(name, self.get(name))
         return m.resolve(rest) if (m is not None and rest) else m
 
+    def walk(self, path = []):
+        """Analogue to os.walk(). Yield (path, entries) for each node in tree.
+
+        The entries list may be changed by the caller to affect further walking.
+        """
+        names = sorted(self.keys())
+        yield path, names # Caller may modify names
+        for name in names:
+            for x in self[name].walk(path + [name]):
+                yield x
+
     def iterpaths(self):
         """Generate relative paths from this manifests and all its children."""
         for p, m in sorted(self.iteritems()):

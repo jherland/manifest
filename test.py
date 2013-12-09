@@ -320,6 +320,68 @@ class TestManifest_from_walk(unittest.TestCase):
         self.must_equal_tar("files_at_many_levels.tar",
             "bar\nbaz\n\tbar\n\tbaz\n\t\tbar\n\t\tbaz\n\t\tfoo\n\tfoo\nfoo\n")
 
+class TestManifest_walk_visits_all_paths(unittest.TestCase):
+
+    def check_visited_paths(self, path, expect):
+        m = Manifest.from_walk(t_path(path))
+        self.assertEquals(map(lambda t: "/".join(t[0]), m.walk()), expect)
+
+    def test_empty(self):
+        self.check_visited_paths("empty", [""])
+
+    def test_single_file(self):
+        self.check_visited_paths("single_file", ["", "foo"])
+
+    def test_two_files(self):
+        self.check_visited_paths("two_files", ["", "bar", "foo"])
+
+    def test_file_and_empty_subdir(self):
+        self.check_visited_paths("file_and_empty_subdir",
+                                 ["", "file", "subdir"])
+
+    def test_file_and_subdir(self):
+        self.check_visited_paths("file_and_subdir",
+                                 ["", "file", "subdir", "subdir/foo"])
+
+    def test_file_and_subdir_trailing_slash(self):
+        self.check_visited_paths("file_and_subdir/",
+                                 ["", "file", "subdir", "subdir/foo"])
+
+    def test_files_at_many_levels(self):
+        self.check_visited_paths("files_at_many_levels", [
+            "",
+            "bar",
+            "baz",
+            "baz/bar",
+            "baz/baz",
+            "baz/baz/bar",
+            "baz/baz/baz",
+            "baz/baz/foo",
+            "baz/foo",
+            "foo",
+        ])
+
+    def test_nonrecursive(self):
+        m = Manifest.parse("""\
+            foo
+                child1
+                child2
+            bar
+            baz
+                child3
+            """.split("\n"))
+        result = []
+        for path, names in m.walk():
+            result.append("/".join(path))
+            del names[:]
+        self.assertEquals(result, [""])
+        result = []
+        for path, names in m.walk():
+            result.append("/".join(path))
+            if path:
+                del names[:]
+        self.assertEquals(result, ["", "bar", "baz", "foo"])
+
 class TestManifest_iterpaths(unittest.TestCase):
 
     def must_equal(self, path, expect):
