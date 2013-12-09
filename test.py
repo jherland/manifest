@@ -523,11 +523,11 @@ class TestManifest_walk_selective_recurse(unittest.TestCase):
             return path and path[-1] == "a"
         self.check_paths(modifier, expect)
 
-class TestManifest_iterpaths(unittest.TestCase):
+class TestManifest_paths(unittest.TestCase):
 
     def must_equal(self, path, expect):
         m = Manifest.from_walk(t_path(path))
-        self.assertEquals(list(m.iterpaths()), expect)
+        self.assertEquals(list(m.paths()), expect)
 
     def test_empty(self):
         self.must_equal("empty", [])
@@ -569,7 +569,7 @@ class TestManifest_iterpaths(unittest.TestCase):
             baz
                 child3
             """.split("\n"))
-        self.assertEquals(list(m.iterpaths(recursive = False)),
+        self.assertEquals(list(m.paths(recursive = False)),
                           ["bar", "baz", "foo"])
 
 class TestManifest_merge(unittest.TestCase):

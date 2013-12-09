@@ -135,7 +135,7 @@ class Manifest(dict):
             for x in self[name].walk(path + [name]):
                 yield x
 
-    def iterpaths(self, recursive = True):
+    def paths(self, recursive = True):
         """Generate relative paths from this manifests and all its children.
 
         The 'recursive' argument determines whether to recurse into child
@@ -158,7 +158,7 @@ class Manifest(dict):
         """Generate sequence of matching path tuples from multiple manifests.
 
         The given arguments are one or more Manifests (ma, mb, mc, ...). For
-        each given manifest mx call .iterpaths() to generate a sequence of
+        each given manifest mx call .paths() to generate a sequence of
         relative paths. Merge these paths across manifests, into a sorted
         sequence of tuples (pa, pb, pc, ...), where each px is either a path
         from the corresponding Manifest mx, or None if the corresponding mx
@@ -172,7 +172,7 @@ class Manifest(dict):
         none_iter = itertools.repeat(None)
         exists = lambda p: p is not None
 
-        gens = [itertools.chain(m.iterpaths(), none_iter) for m in args]
+        gens = [itertools.chain(m.paths(), none_iter) for m in args]
         paths = [next(gen) for gen in gens]
         while filter(exists, paths):
             least = min(filter(exists, paths))
