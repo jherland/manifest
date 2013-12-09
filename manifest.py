@@ -136,9 +136,16 @@ class Manifest(dict):
                 yield x
 
     def iterpaths(self, recursive = True):
-        """Generate relative paths from this manifests and all its children."""
+        """Generate relative paths from this manifests and all its children.
+
+        The 'recursive' argument determines whether to recurse into child
+        nodes by default. The caller may always override the default by
+        send()ing True into a yield to force recursion into that node, or
+        send()ing False into a yield to force recursion to be skipped for that
+        node.
+        """
         for path, names in self.walk():
-            if not path:
+            if not path: # skip top-level/empty path
                 continue
             recurse = (yield "/".join(path))
             if recurse is None:
