@@ -1,37 +1,39 @@
 import unittest
 
 from manifest import Manifest
-from test_utils import t_path
+from test_utils import t_path, unpacked_tar, Manifest_from_tar
 
 class Test_Manifest_walk_visits_all_paths(unittest.TestCase):
 
-    def check_visited_paths(self, path, expect):
-        m = Manifest.from_walk(t_path(path))
+    def check_visited_paths(self, tar_path, expect):
+        m = Manifest_from_tar(tar_path)
         self.assertEquals(map(lambda t: "/".join(t[0]), m.walk()), expect)
 
     def test_empty(self):
-        self.check_visited_paths("empty", [""])
+        self.check_visited_paths("empty.tar", [""])
 
     def test_single_file(self):
-        self.check_visited_paths("single_file", ["", "foo"])
+        self.check_visited_paths("single_file.tar", ["", "foo"])
 
     def test_two_files(self):
-        self.check_visited_paths("two_files", ["", "bar", "foo"])
+        self.check_visited_paths("two_files.tar", ["", "bar", "foo"])
 
     def test_file_and_empty_subdir(self):
-        self.check_visited_paths("file_and_empty_subdir",
+        self.check_visited_paths("file_and_empty_subdir.tar",
                                  ["", "file", "subdir"])
 
     def test_file_and_subdir(self):
-        self.check_visited_paths("file_and_subdir",
+        self.check_visited_paths("file_and_subdir.tar",
                                  ["", "file", "subdir", "subdir/foo"])
 
     def test_file_and_subdir_trailing_slash(self):
-        self.check_visited_paths("file_and_subdir/",
-                                 ["", "file", "subdir", "subdir/foo"])
+        with unpacked_tar("file_and_subdir.tar") as d:
+            m = Manifest.from_walk(d + "/")
+        self.assertEquals(map(lambda t: "/".join(t[0]), m.walk()),
+                          ["", "file", "subdir", "subdir/foo"])
 
     def test_files_at_many_levels(self):
-        self.check_visited_paths("files_at_many_levels", [
+        self.check_visited_paths("files_at_many_levels.tar", [
             "",
             "bar",
             "baz",
@@ -208,30 +210,32 @@ class Test_Manifest_walk_selective_recurse(unittest.TestCase):
 
 class Test_Manifest_paths(unittest.TestCase):
 
-    def must_equal(self, path, expect):
-        m = Manifest.from_walk(t_path(path))
+    def must_equal(self, tar_path, expect):
+        m = Manifest_from_tar(tar_path)
         self.assertEquals(list(m.paths()), expect)
 
     def test_empty(self):
-        self.must_equal("empty", [])
+        self.must_equal("empty.tar", [])
 
     def test_single_file(self):
-        self.must_equal("single_file", ["foo"])
+        self.must_equal("single_file.tar", ["foo"])
 
     def test_two_files(self):
-        self.must_equal("two_files", ["bar", "foo"])
+        self.must_equal("two_files.tar", ["bar", "foo"])
 
     def test_file_and_empty_subdir(self):
-        self.must_equal("file_and_empty_subdir", ["file", "subdir"])
+        self.must_equal("file_and_empty_subdir.tar", ["file", "subdir"])
 
     def test_file_and_subdir(self):
-        self.must_equal("file_and_subdir", ["file", "subdir", "subdir/foo"])
+        self.must_equal("file_and_subdir.tar", ["file", "subdir", "subdir/foo"])
 
     def test_file_and_subdir_trailing_slash(self):
-        self.must_equal("file_and_subdir/", ["file", "subdir", "subdir/foo"])
+        with unpacked_tar("file_and_subdir.tar") as d:
+            m = Manifest.from_walk(d + "/")
+        self.assertEquals(list(m.paths()), ["file", "subdir", "subdir/foo"])
 
     def test_files_at_many_levels(self):
-        self.must_equal("files_at_many_levels", [
+        self.must_equal("files_at_many_levels.tar", [
             "bar",
             "baz",
             "baz/bar",
