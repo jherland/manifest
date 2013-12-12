@@ -1,0 +1,12 @@
+- Split tests into multiple files
+- Refactor tests
+- Consider splitting merge() and diff() out of Manifest class
+- Provide an __init__.py to make us more like a proper Python package?
+- Add walk() functionality to drill into .tar files as if they were a
+  regular dir.
+- Add support for git trees?
+- Add support for wildcard entries? (This manifest will match zero or more
+  entries at this level. Format? glob? regexp?)
+- Add support for entry-specific options, like size, approx size?, checksum
+  match, permission check, modification timestamp checks?
+- Add frontend for generating more human-friendly reports
