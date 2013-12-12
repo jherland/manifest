@@ -6,8 +6,7 @@ import shutil
 from manifest import Manifest
 
 # Absolute path to t/ subdir
-TEST_DIR = os.path.normpath(os.path.join(
-    os.getcwd(), os.path.dirname(__file__), "t"))
+TEST_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "t")
 
 def t_path(path):
     """Return absolute path to 'path' inside t/."""
