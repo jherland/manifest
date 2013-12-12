@@ -210,49 +210,37 @@ class Manifest(dict):
             paths = next_round # prepare for next round
 
     @classmethod
-    def diff(cls, *args):
+    def diff(cls, *args, **kwargs):
         """Generate sequence of differences between two or more manifests.
 
         For the given manifests (ma, mb, mc, ...), generate a sequence of tuples
         (pa, pb, pc, ...) whenever a path px is encountered that is not present
         in all manifests. This is equivalent to filtering merge() for tuples
         where all px are present.
+
+        Use the 'recursive' keyword argument to control whether you get a
+        minimal (recursive = False, the default) or maximal (recursive = True)
+        diff. A minimal diff does not recurse into an entry which has
+        differences, whereas a maximal diff enumerates the entirety of the
+        differences between the given manifests. For example, if one manifest
+        contains an entry "foo" with a sub-entry "bar", neither of which occurs
+        in the other manifest(s), then a minimal diff will stop list only "foo",
+        whereas a maximal diff will list both "foo" and "foo/bar".
+
+        As with .merge(), the 'key' keyword argument determines how entries are
+        compared, and this very much controls what ends up in the resulting
+        diff. The default key simply evaluates to the relative entry path,
+        which is probably what you want in most cases.
         """
-        for t in cls.merge(*args):
-            if filter(lambda p: p is None, t): # One or more is None
-                yield t
-
-    @classmethod
-    def mindiff(cls, *args):
-        """Generate the minimal sequence of differences between manifests.
-
-        This is the same as above, except when differences are found, we don't
-        drill into those diffs to generate everything beneath as additional
-        diffs.
-        """
-        none_iter = itertools.repeat(None)
-        exists = lambda p: p is not None
-        entry_key = lambda e: e[0] if e is not None else None
-
-        print "\nmindiff:", ", ".join([repr(a) for a in args])
-        gens = [iter(sorted(m.iteritems())) for m in args]
-        entries = [next(gen) for gen in gens]
-        while filter(exists, entries):
-            print "  entries:", ", ".join([repr(e) for e in entries])
-            least = min([entry_key(e) for e in entries if e])
-            print "  least:", least
-            ret, next_entries = [], []
-            for entry, gen in zip(entries, gens):
-                if entry_key(entry) == least:
-                    ret.append(entry)
-                    next_entries.append(next(gen))
-                else:
-                    ret.append(None)
-                    next_entries.append(entry)
-            found = len(filter(exists, ret))
-            assert found > 0
-            if found > 1: # drill down
-                print "  -> drill into %s" % (repr(ret)) # TODO
-            else:
-                yield tuple(map(entry_key, ret))
-            entries = next_entries
+        kwargs.setdefault('recursive', False) # Default to minimal diff
+        try:
+            merged_entries = cls.merge(*args, **kwargs)
+            t = merged_entries.next()
+            while True:
+                if filter(lambda p: p is None, t): # One or more is None
+                    yield t
+                    t = merged_entries.next()
+                else: # All manifests match on this entry. Drill down
+                    t = merged_entries.send(True) # Recurse into this node/path
+        except StopIteration:
+            pass

@@ -652,20 +652,28 @@ class TestManifest_merge(unittest.TestCase):
             t = gen.next()
             while True:
                 actual.append(t)
-                if "foo" in t:
+                paths = filter(lambda x: x is not None, t)
+                self.assertTrue(paths)
+                path = paths[0]
+                self.assertEqual(tuple([path] * len(paths)), paths)
+                try:
+                    last_component = path.rsplit("/", 1)[1]
+                except:
+                    last_component = path
+                if last_component == "foo":
                     t = gen.send(True)
                 else:
                     t = gen.next()
         except StopIteration:
             pass
 
-        #self.assertEqual(actual, [
-            #("bar", None, None),
-            #("foo", "foo", "foo"),
-            #("foo/bar", None, "foo/bar"),
-            #("foo/foo", "foo/foo", "foo/foo"),
-            #(None, None, "foo/foo/foo"),
-            #(None, "xyzzy", None)])
+        self.assertEqual(actual, [
+            ("bar", None, None),
+            ("foo", "foo", "foo"),
+            ("foo/bar", None, "foo/bar"),
+            ("foo/foo", "foo/foo", "foo/foo"),
+            (None, None, "foo/foo/foo"),
+            (None, "xyzzy", None)])
 
 class TestManifest_diff(unittest.TestCase):
 
@@ -746,20 +754,20 @@ class TestManifest_diff(unittest.TestCase):
         self.assertEqual(list(Manifest.diff(m1, m2)), [(None, "subdir/foo")])
         self.assertEqual(list(Manifest.diff(m2, m1)), [("subdir/foo", None)])
 
-    def test_diff_two_files_vs_files_at_many_levels(self):
+    def test_min_diff_two_files_vs_files_at_many_levels(self):
         m1 = self.from_tar("two_files.tar")
         m2 = self.from_tar("files_at_many_levels.tar")
-        self.assertEqual(list(Manifest.diff(m1, m2)), [
+        self.assertEqual(list(Manifest.diff(m1, m2)), [(None, "baz")])
+
+    def test_max_diff_two_files_vs_files_at_many_levels(self):
+        m1 = self.from_tar("two_files.tar")
+        m2 = self.from_tar("files_at_many_levels.tar")
+        self.assertEqual(list(Manifest.diff(m1, m2, recursive = True)), [
             (None, "baz"), (None, "baz/bar"), (None, "baz/baz"),
             (None, "baz/baz/bar"), (None, "baz/baz/baz"), (None, "baz/baz/foo"),
             (None, "baz/foo")])
 
-    def test_min_diff_two_files_vs_files_at_many_levels(self):
-        m1 = self.from_tar("two_files.tar")
-        m2 = self.from_tar("files_at_many_levels.tar")
-        self.assertEqual(list(Manifest.mindiff(m1, m2)), [(None, "baz")])
-
-    def test_min_diff_with_diff_at_muliples_levels(self):
+    def test_min_max_diff_with_diff_at_muliples_levels(self):
         m1 = Manifest.parse("""\
             1foo
             2bar
@@ -778,12 +786,19 @@ class TestManifest_diff(unittest.TestCase):
                 2zyxxy
             3baz
             4diff
+                1diff
             """.split("\n"))
-        #self.assertEqual(list(Manifest.mindiff(m1, m2)), [
-            #(None, "2bar/1xyzzy/2diff"),
-            #("2bar/3diff", None),
-            #(None, "4diff"),
-        #])
+        self.assertEqual(list(Manifest.diff(m1, m2)), [
+            (None, "2bar/1xyzzy/2diff"),
+            ("2bar/3diff", None),
+            (None, "4diff"),
+        ])
+        self.assertEqual(list(Manifest.diff(m1, m2, recursive = True)), [
+            (None, "2bar/1xyzzy/2diff"),
+            ("2bar/3diff", None),
+            (None, "4diff"),
+            (None, "4diff/1diff"),
+        ])
 
 if __name__ == '__main__':
     unittest.main()
