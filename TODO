@@ -1,4 +1,3 @@
-- Split tests into multiple files
 - Refactor tests
 - Consider splitting merge() and diff() out of Manifest class
 - Provide an __init__.py to make us more like a proper Python package?
