@@ -1,8 +1,9 @@
 import os
-from contextlib import contextmanager
+import glob
 import tempfile
 import subprocess
 import shutil
+from contextlib import contextmanager
 
 # Absolute path to t/ subdir
 TEST_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "t")
@@ -10,6 +11,8 @@ TEST_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "t")
 def t_path(path):
     """Return absolute path to 'path' inside t/."""
     return os.path.join(TEST_DIR, path)
+
+TEST_TARS = glob.glob(t_path("*.tar"))
 
 @contextmanager
 def unpacked_tar(tar_path):

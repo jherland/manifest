@@ -1,8 +1,7 @@
 import unittest
-import glob
 
 from manifest import Manifest
-from test_utils import t_path, Manifest_from_tar
+from test_utils import TEST_TARS, Manifest_from_tar
 
 class Test_Manifest_merge(unittest.TestCase):
 
@@ -125,8 +124,7 @@ class Test_Manifest_diff(unittest.TestCase):
         self.assertEquals(m3, m1)
 
     def test_diff_like(self):
-        tars = glob.glob(t_path("*.tar"))
-        for t in tars:
+        for t in TEST_TARS:
             m1, m2 = Manifest_from_tar(t), Manifest_from_tar(t)
             self.assertEqual(list(Manifest.diff(m1, m2)), [])
             self.assertEqual(list(Manifest.diff(m2, m1)), [])
@@ -134,10 +132,9 @@ class Test_Manifest_diff(unittest.TestCase):
             self.assertEqual(m2, m1)
 
     def test_diff_unlike(self):
-        tars = glob.glob(t_path("*.tar"))
-        shifted = tars[:]
+        shifted = TEST_TARS[:]
         shifted.append(shifted.pop(0))
-        for t1, t2 in zip(tars, shifted):
+        for t1, t2 in zip(TEST_TARS, shifted):
             m1, m2 = Manifest_from_tar(t1), Manifest_from_tar(t2)
             self.assertTrue(list(Manifest.diff(m1, m2)))
             self.assertTrue(list(Manifest.diff(m2, m1)))
