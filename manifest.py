@@ -1,7 +1,6 @@
 #!/usr/bin/env python2
 
 import weakref
-import itertools
 
 class Manifest(dict):
     """Encapsulate a description of a file hierarchy.

@@ -5,8 +5,6 @@ from manifest import Manifest
 
 class Test_Manifest_parse_lines(unittest.TestCase):
 
-    # Helpers
-
     def must_equal(self, input_string, expect):
         stream = Manifest.parse_lines(StringIO(input_string))
         self.assertEqual(list(stream), expect)
@@ -14,8 +12,6 @@ class Test_Manifest_parse_lines(unittest.TestCase):
     def must_raise(self, input_string, exception):
         stream = Manifest.parse_lines(StringIO(input_string))
         self.assertRaises(exception, list, stream)
-
-    # Test methods
 
     def test_empty(self):
         self.must_equal("", [])
