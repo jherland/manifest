@@ -1,7 +1,7 @@
 import unittest
 
 from manifest import Manifest
-from test_utils import t_path, unpacked_tar, Manifest_from_tar
+from test_utils import unpacked_tar, Manifest_from_tar
 
 class Test_Manifest_walk_visits_all_paths(unittest.TestCase):
 

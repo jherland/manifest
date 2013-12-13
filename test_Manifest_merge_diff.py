@@ -1,5 +1,4 @@
 import unittest
-import os
 import glob
 
 from manifest import Manifest

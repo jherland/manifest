@@ -1,5 +1,4 @@
 import unittest
-import os
 from cStringIO import StringIO
 
 from manifest import Manifest
