@@ -81,7 +81,7 @@ class Test_Manifest_merge(unittest.TestCase):
         actual = []
         gen = Manifest.merge(m1, m2, m3, recursive = False)
         try:
-            t = gen.next()
+            t = next(gen)
             while True:
                 actual.append(t)
                 paths = filter(lambda x: x is not None, t)
@@ -95,7 +95,7 @@ class Test_Manifest_merge(unittest.TestCase):
                 if last_component == "foo":
                     t = gen.send(True)
                 else:
-                    t = gen.next()
+                    t = next(gen)
         except StopIteration:
             pass
 

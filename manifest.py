@@ -193,7 +193,7 @@ class Manifest(dict):
 
         present = lambda p: p is not None # predicate for present entries
 
-        paths = [gen.next() for gen in gens] # first line of contestants
+        paths = [next(gen) for gen in gens] # first line of contestants
         while filter(present, paths): # there are still contestants left
             ticket = min(key(px) for px in paths if present(px)) # perform draw
             winners = [(p if key(p) == ticket else None) for p in paths]
@@ -233,11 +233,11 @@ class Manifest(dict):
         kwargs.setdefault('recursive', False) # Default to minimal diff
         try:
             merged_entries = cls.merge(*args, **kwargs)
-            t = merged_entries.next()
+            t = next(merged_entries)
             while True:
                 if filter(lambda p: p is None, t): # One or more is None
                     yield t
-                    t = merged_entries.next()
+                    t = next(merged_entries)
                 else: # All manifests match on this entry. Drill down
                     t = merged_entries.send(True) # Recurse into this node/path
         except StopIteration:
