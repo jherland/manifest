@@ -84,7 +84,7 @@ class Test_Manifest_merge(unittest.TestCase):
             t = next(gen)
             while True:
                 actual.append(t)
-                paths = filter(lambda x: x is not None, t)
+                paths = [p for p in t if p is not None]
                 self.assertTrue(paths)
                 path = paths[0]
                 self.assertEqual([path] * len(paths), paths)

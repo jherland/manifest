@@ -7,7 +7,7 @@ class Test_Manifest_walk_visits_all_paths(unittest.TestCase):
 
     def check_visited_paths(self, tar_path, expect):
         m = Manifest_from_tar(tar_path)
-        self.assertEqual(map(lambda t: "/".join(t[0]), m.walk()), expect)
+        self.assertEqual(["/".join(path) for path, entries in m.walk()], expect)
 
     def test_empty(self):
         self.check_visited_paths("empty.tar", [""])
@@ -29,7 +29,7 @@ class Test_Manifest_walk_visits_all_paths(unittest.TestCase):
     def test_file_and_subdir_trailing_slash(self):
         with unpacked_tar("file_and_subdir.tar") as d:
             m = Manifest.from_walk(d + "/")
-        self.assertEqual(map(lambda t: "/".join(t[0]), m.walk()),
+        self.assertEqual(["/".join(path) for path, entries in m.walk()],
                          ["", "file", "subdir", "subdir/foo"])
 
     def test_files_at_many_levels(self):
@@ -179,7 +179,7 @@ class Test_Manifest_walk_selective_recurse(unittest.TestCase):
         self.check_paths(modifier, expect)
 
         def modifier(path, names):
-            return not filter(lambda p: p != "a", path)
+            return not any(True for p in path if p != "a")
         self.check_paths(modifier, expect)
 
     def test_starts_with_a(self):

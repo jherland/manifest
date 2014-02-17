@@ -191,13 +191,11 @@ class Manifest(dict):
         # detect end of overall iteration when _all_ generators return None.
         gens = [m.paths(never_stop = True) for m in args]
 
-        present = lambda p: p is not None # predicate for present entries
-
         paths = [next(gen) for gen in gens] # first line of contestants
-        while filter(present, paths): # there are still contestants left
-            ticket = min(key(px) for px in paths if present(px)) # perform draw
+        while any(p is not None for p in paths): # there are contestants left
+            ticket = min(key(p) for p in paths if p is not None) # perform draw
             winners = [(p if key(p) == ticket else None) for p in paths]
-            assert filter(present, winners) # at least one winner
+            assert any(p is not None for p in winners) # at least one winner
             recurse = (yield tuple(winners))
             if recurse is None:
                 recurse = recursive
@@ -235,7 +233,7 @@ class Manifest(dict):
             merged_entries = cls.merge(*args, **kwargs)
             t = next(merged_entries)
             while True:
-                if filter(lambda p: p is None, t): # One or more is None
+                if any(True for p in t if p is None): # One or more is None
                     yield t
                     t = next(merged_entries)
                 else: # All manifests match on this entry. Drill down
