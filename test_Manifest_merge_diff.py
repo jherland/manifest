@@ -87,7 +87,7 @@ class Test_Manifest_merge(unittest.TestCase):
                 paths = filter(lambda x: x is not None, t)
                 self.assertTrue(paths)
                 path = paths[0]
-                self.assertEqual(tuple([path] * len(paths)), paths)
+                self.assertEqual([path] * len(paths), paths)
                 try:
                     last_component = path.rsplit("/", 1)[1]
                 except:
