@@ -1,5 +1,11 @@
 import unittest
-from cStringIO import StringIO
+try:
+    from cStringIO import StringIO # Most python2
+except ImportError:
+    try:
+        from StringIO import StringIO # Some python2
+    except ImportError:
+        from io import StringIO # python3
 
 from manifest import Manifest
 from test_utils import t_path, unpacked_tar, Manifest_from_tar
