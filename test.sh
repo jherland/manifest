@@ -1,3 +1,8 @@
 #!/bin/sh
 
-python2 test.py && python3 test.py
+mydir=$(dirname $0)
+
+for python in $(ls /usr/bin/python?.?); do
+    echo "Running test.py under ${python}:"
+    ${python} ${mydir}/test.py
+done
