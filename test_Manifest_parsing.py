@@ -82,7 +82,7 @@ class Test_Manifest_parse(unittest.TestCase):
     def test_single_word(self):
         m = Manifest.parse(StringIO("foo"))
         self.assertEqual(len(m), 1)
-        self.assertEqual(m.keys(), ["foo"])
+        self.assertEqual(sorted(m.keys()), ["foo"])
         self.assertEqual(len(m["foo"]), 0)
 
     def test_two_words(self):
@@ -95,15 +95,15 @@ class Test_Manifest_parse(unittest.TestCase):
     def test_entry_with_child(self):
         m = Manifest.parse(StringIO("foo\n\tbar"))
         self.assertEqual(len(m), 1)
-        self.assertEqual(m.keys(), ["foo"])
+        self.assertEqual(sorted(m.keys()), ["foo"])
         self.assertEqual(len(m["foo"]), 1)
-        self.assertEqual(m["foo"].keys(), ["bar"])
+        self.assertEqual(sorted(m["foo"].keys()), ["bar"])
         self.assertEqual(len(m["foo"]["bar"]), 0)
 
     def test_entry_with_children(self):
         m = Manifest.parse(StringIO("foo\n\tbar\n\tbaz"))
         self.assertEqual(len(m), 1)
-        self.assertEqual(m.keys(), ["foo"])
+        self.assertEqual(sorted(m.keys()), ["foo"])
         self.assertEqual(len(m["foo"]), 2)
         self.assertEqual(sorted(m["foo"].keys()), ["bar", "baz"])
         self.assertEqual(len(m["foo"]["bar"]), 0)
@@ -121,11 +121,11 @@ class Test_Manifest_parse(unittest.TestCase):
     def test_entry_with_grandchild(self):
         m = Manifest.parse(StringIO("foo\n\tbar\n\t\tbaz"))
         self.assertEqual(len(m), 1)
-        self.assertEqual(m.keys(), ["foo"])
+        self.assertEqual(sorted(m.keys()), ["foo"])
         self.assertEqual(len(m["foo"]), 1)
-        self.assertEqual(m["foo"].keys(), ["bar"])
+        self.assertEqual(sorted(m["foo"].keys()), ["bar"])
         self.assertEqual(len(m["foo"]["bar"]), 1)
-        self.assertEqual(m["foo"]["bar"].keys(), ["baz"])
+        self.assertEqual(sorted(m["foo"]["bar"].keys()), ["baz"])
         self.assertEqual(len(m["foo"]["bar"]["baz"]), 0)
 
     def test_entry_with_grandchild_and_sibling(self):
@@ -133,18 +133,18 @@ class Test_Manifest_parse(unittest.TestCase):
         self.assertEqual(len(m), 2)
         self.assertEqual(sorted(m.keys()), ["foo", "xyzzy"])
         self.assertEqual(len(m["foo"]), 1)
-        self.assertEqual(m["foo"].keys(), ["bar"])
+        self.assertEqual(sorted(m["foo"].keys()), ["bar"])
         self.assertEqual(len(m["foo"]["bar"]), 1)
-        self.assertEqual(m["foo"]["bar"].keys(), ["baz"])
+        self.assertEqual(sorted(m["foo"]["bar"].keys()), ["baz"])
         self.assertEqual(len(m["foo"]["bar"]["baz"]), 0)
         self.assertEqual(len(m["xyzzy"]), 0)
 
     def test_parent_refs(self):
         m = Manifest.parse(StringIO("foo\n\tbar"))
         self.assertEqual(len(m), 1)
-        self.assertEqual(m.keys(), ["foo"])
+        self.assertEqual(sorted(m.keys()), ["foo"])
         self.assertEqual(len(m["foo"]), 1)
-        self.assertEqual(m["foo"].keys(), ["bar"])
+        self.assertEqual(sorted(m["foo"].keys()), ["bar"])
         self.assertEqual(len(m["foo"]["bar"]), 0)
         self.assertEqual(m.getparent(), None)
         self.assertEqual(m["foo"].getparent(), m)
