@@ -8,13 +8,13 @@ except ImportError:
         from io import StringIO # python3
 
 from manifest import Manifest
-from test_utils import t_path, unpacked_tar, Manifest_from_tar
+from test_utils import t_path, unpacked_tar, Manifest_from_walking_unpacked_tar
 
 class Test_Manifest_from_walk(unittest.TestCase):
 
     def must_equal(self, tar_path, expect):
         s = StringIO()
-        Manifest_from_tar(tar_path).write(s)
+        Manifest_from_walking_unpacked_tar(tar_path).write(s)
         self.assertEqual(s.getvalue(), expect)
 
     def test_missing_raises_ValueError(self):

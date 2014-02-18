@@ -1,7 +1,7 @@
 import unittest
 
 from manifest import Manifest
-from test_utils import TEST_TARS, Manifest_from_tar
+from test_utils import TEST_TARS, Manifest_from_walking_unpacked_tar
 
 class Test_Manifest_merge(unittest.TestCase):
 
@@ -13,15 +13,15 @@ class Test_Manifest_merge(unittest.TestCase):
         self.assertEqual(list(Manifest.merge(m)), [])
 
     def test_two_empties(self):
-        m1, m2 = Manifest(), Manifest_from_tar("empty.tar")
+        m1, m2 = Manifest(), Manifest_from_walking_unpacked_tar("empty.tar")
         self.assertEqual(list(Manifest.merge(m1, m2)), [])
 
     def test_one_single_file(self):
-        m = Manifest_from_tar("single_file.tar")
+        m = Manifest_from_walking_unpacked_tar("single_file.tar")
         self.assertEqual(list(Manifest.merge(m)), [("foo",)])
 
     def test_single_file_x2(self):
-        m1 = Manifest_from_tar("single_file.tar")
+        m1 = Manifest_from_walking_unpacked_tar("single_file.tar")
         m2 = Manifest.parse(["foo"])
         self.assertEqual(list(Manifest.merge(m1, m2)), [("foo", "foo")])
 
@@ -43,8 +43,8 @@ class Test_Manifest_merge(unittest.TestCase):
             ("same", "same", "same")])
 
     def test_empty_subdir_vs_nonepty_subdir(self):
-        m1 = Manifest_from_tar("file_and_empty_subdir.tar")
-        m2 = Manifest_from_tar("file_and_subdir.tar")
+        m1 = Manifest_from_walking_unpacked_tar("file_and_empty_subdir.tar")
+        m2 = Manifest_from_walking_unpacked_tar("file_and_subdir.tar")
         self.assertEqual(list(Manifest.merge(m1, m2)), [
             ("file", "file"), ("subdir", "subdir"), (None, "subdir/foo")])
 
@@ -112,7 +112,7 @@ class Test_Manifest_diff(unittest.TestCase):
     def test_diff_empties(self):
         m1 = Manifest()
         m2 = Manifest.parse([""])
-        m3 = Manifest_from_tar("empty.tar")
+        m3 = Manifest_from_walking_unpacked_tar("empty.tar")
         self.assertEqual(list(Manifest.diff(m1, m2)), [])
         self.assertEqual(list(Manifest.diff(m1, m3)), [])
         self.assertEqual(list(Manifest.diff(m2, m1)), [])
@@ -125,7 +125,8 @@ class Test_Manifest_diff(unittest.TestCase):
 
     def test_diff_like(self):
         for t in TEST_TARS:
-            m1, m2 = Manifest_from_tar(t), Manifest_from_tar(t)
+            m1 = Manifest_from_walking_unpacked_tar(t)
+            m2 = Manifest_from_walking_unpacked_tar(t)
             self.assertEqual(list(Manifest.diff(m1, m2)), [])
             self.assertEqual(list(Manifest.diff(m2, m1)), [])
             self.assertEqual(m1, m2)
@@ -135,7 +136,8 @@ class Test_Manifest_diff(unittest.TestCase):
         shifted = TEST_TARS[:]
         shifted.append(shifted.pop(0))
         for t1, t2 in zip(TEST_TARS, shifted):
-            m1, m2 = Manifest_from_tar(t1), Manifest_from_tar(t2)
+            m1 = Manifest_from_walking_unpacked_tar(t1)
+            m2 = Manifest_from_walking_unpacked_tar(t2)
             self.assertTrue(list(Manifest.diff(m1, m2)))
             self.assertTrue(list(Manifest.diff(m2, m1)))
             self.assertNotEqual(m1, m2)
@@ -145,39 +147,39 @@ class Test_Manifest_diff(unittest.TestCase):
                              len(list(Manifest.diff(m2, m1))))
 
     def test_diff_empty_vs_single_file(self):
-        m1 = Manifest_from_tar("empty.tar")
-        m2 = Manifest_from_tar("single_file.tar")
+        m1 = Manifest_from_walking_unpacked_tar("empty.tar")
+        m2 = Manifest_from_walking_unpacked_tar("single_file.tar")
         self.assertEqual(list(Manifest.diff(m1, m2)), [(None, "foo")])
         self.assertEqual(list(Manifest.diff(m2, m1)), [("foo", None)])
 
     def test_diff_single_file_vs_two_files(self):
-        m1 = Manifest_from_tar("single_file.tar")
-        m2 = Manifest_from_tar("two_files.tar")
+        m1 = Manifest_from_walking_unpacked_tar("single_file.tar")
+        m2 = Manifest_from_walking_unpacked_tar("two_files.tar")
         self.assertEqual(list(Manifest.diff(m1, m2)), [(None, "bar")])
         self.assertEqual(list(Manifest.diff(m2, m1)), [("bar", None)])
 
     def test_diff_two_files_vs_file_and_empty_subdir(self):
-        m1 = Manifest_from_tar("two_files.tar")
-        m2 = Manifest_from_tar("file_and_empty_subdir.tar")
+        m1 = Manifest_from_walking_unpacked_tar("two_files.tar")
+        m2 = Manifest_from_walking_unpacked_tar("file_and_empty_subdir.tar")
         self.assertEqual(list(Manifest.diff(m1, m2)), [
             ("bar", None), (None, "file"), ("foo", None), (None, "subdir")])
         self.assertEqual(list(Manifest.diff(m2, m1)), [
             (None, "bar"), ("file", None), (None, "foo"), ("subdir", None)])
 
     def test_diff_file_and_empty_subdir_vs_file_and_subdir(self):
-        m1 = Manifest_from_tar("file_and_empty_subdir.tar")
-        m2 = Manifest_from_tar("file_and_subdir.tar")
+        m1 = Manifest_from_walking_unpacked_tar("file_and_empty_subdir.tar")
+        m2 = Manifest_from_walking_unpacked_tar("file_and_subdir.tar")
         self.assertEqual(list(Manifest.diff(m1, m2)), [(None, "subdir/foo")])
         self.assertEqual(list(Manifest.diff(m2, m1)), [("subdir/foo", None)])
 
     def test_min_diff_two_files_vs_files_at_many_levels(self):
-        m1 = Manifest_from_tar("two_files.tar")
-        m2 = Manifest_from_tar("files_at_many_levels.tar")
+        m1 = Manifest_from_walking_unpacked_tar("two_files.tar")
+        m2 = Manifest_from_walking_unpacked_tar("files_at_many_levels.tar")
         self.assertEqual(list(Manifest.diff(m1, m2)), [(None, "baz")])
 
     def test_max_diff_two_files_vs_files_at_many_levels(self):
-        m1 = Manifest_from_tar("two_files.tar")
-        m2 = Manifest_from_tar("files_at_many_levels.tar")
+        m1 = Manifest_from_walking_unpacked_tar("two_files.tar")
+        m2 = Manifest_from_walking_unpacked_tar("files_at_many_levels.tar")
         self.assertEqual(list(Manifest.diff(m1, m2, recursive = True)), [
             (None, "baz"), (None, "baz/bar"), (None, "baz/baz"),
             (None, "baz/baz/bar"), (None, "baz/baz/baz"), (None, "baz/baz/foo"),

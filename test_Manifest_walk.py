@@ -1,12 +1,12 @@
 import unittest
 
 from manifest import Manifest
-from test_utils import unpacked_tar, Manifest_from_tar
+from test_utils import unpacked_tar, Manifest_from_walking_unpacked_tar
 
 class Test_Manifest_walk_visits_all_paths(unittest.TestCase):
 
     def check_visited_paths(self, tar_path, expect):
-        m = Manifest_from_tar(tar_path)
+        m = Manifest_from_walking_unpacked_tar(tar_path)
         self.assertEqual(["/".join(path) for path, entries in m.walk()], expect)
 
     def test_empty(self):
@@ -211,7 +211,7 @@ class Test_Manifest_walk_selective_recurse(unittest.TestCase):
 class Test_Manifest_paths(unittest.TestCase):
 
     def must_equal(self, tar_path, expect):
-        m = Manifest_from_tar(tar_path)
+        m = Manifest_from_walking_unpacked_tar(tar_path)
         self.assertEqual(list(m.paths()), expect)
 
     def test_empty(self):
