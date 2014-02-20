@@ -4,13 +4,13 @@ import weakref
 class Manifest(dict):
     """Encapsulate a description of a file hierarchy.
 
-    This is equivalent to a hierachical dictionary, where each key is an entry
-    (i.e. file or direcotry) in the file hierachy, and the corresponding value
+    This is equivalent to a hierarchical dictionary, where each key is an entry
+    (i.e. file or direcotry) in the file hierarchy, and the corresponding value
     is the Manifest object representing the children of that entry.
 
     In addition to merely wrapping a dict of Manifest objects, each Manifest
-    also has a parent attribute that references the Manifest object of the
-    parent (or None for a toplevel Manifest object).
+    also has a parent attribute that (weakly) references the Manifest object of
+    the parent (or None for a toplevel Manifest object).
     """
 
     @staticmethod
@@ -128,7 +128,12 @@ class Manifest(dict):
     def walk(self, path = None):
         """Analogue to os.walk(). Yield (path, entries) for each node in tree.
 
-        The entries list may be changed by the caller to affect further walking.
+        The path is itself a list of path components navigating the manifest
+        hierarchy. Join them with "/" as separator to get a relative path from
+        the top-level manifest.
+        The entries list contains the immediate sub-entries located at the
+        corresponding path. The list may be modified by the caller to affect
+        further walking.
         """
         if path is None:
             path = []

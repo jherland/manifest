@@ -5,7 +5,7 @@
   regular dir.
 - Add support for git trees?
 - Add support for wildcard entries? (This manifest will match zero or more
-  entries at this level. Format? glob? regexp?)
+  entries at this level. Format: glob or regexp?)
 - Add support for entry-specific options, like size, approx size?, checksum
   match, permission check, modification timestamp checks?
 - Add frontend for generating more human-friendly reports
