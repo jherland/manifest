@@ -91,6 +91,36 @@ class Manifest(dict):
                 new.setparent(m)
         return top
 
+    @classmethod
+    def from_tar(cls, tarpath, subdir = "./"):
+        """Generate a Manifest from the given tar file.
+
+        The given 'tarpath' filename is processed (using python's built-in
+        tarfile module), and a new manifest is built (and returned) based on
+        the contents of the tar archive.
+        """
+        # In python2.6, TarFile objects are not context managers, so we cannot
+        # do "with tarfile.open(...) as tf:". Also, in python2.6 a TarFile's
+        # .errorlevel defaults to 0, whereas later versions default to 1.
+        import tarfile
+        tf = tarfile.open(tarpath, errorlevel=1)
+        top = cls()
+        for ti in tf:
+            if not ti.name.startswith(subdir):
+                continue
+            rel_path = ti.name[len(subdir):]
+            try:
+                dirname, basename = rel_path.rsplit('/', 1)
+                m = top.resolve(dirname)
+            except ValueError:
+                m, dirname, basename = top, "", rel_path
+            assert m is not None
+            assert basename not in m
+            new = m.setdefault(basename, cls())
+            new.setparent(m)
+        tf.close()
+        return top
+
     def __init__(self, *args, **kwargs):
         dict.__init__(self, *args, **kwargs)
         self._parent = None
