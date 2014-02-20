@@ -125,11 +125,13 @@ class Manifest(dict):
         m = special.get(name, self.get(name))
         return m.resolve(rest) if (m is not None and rest) else m
 
-    def walk(self, path = []):
+    def walk(self, path = None):
         """Analogue to os.walk(). Yield (path, entries) for each node in tree.
 
         The entries list may be changed by the caller to affect further walking.
         """
+        if path is None:
+            path = []
         names = sorted(self.keys())
         yield path, names # Caller may modify names
         for name in names:
