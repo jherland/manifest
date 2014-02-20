@@ -61,9 +61,7 @@ class Manifest(dict):
                     level -= 1
                 assert indent == level
 
-            assert token not in cur
-            prev = cur.setdefault(token, cls())
-            prev.setparent(cur)
+            prev = cur._add([token])
         return top
 
     @classmethod
@@ -82,13 +80,9 @@ class Manifest(dict):
         for dirpath, dirnames, filenames in os.walk(path):
             assert dirpath.startswith(top_path)
             rel_path = dirpath[len(top_path):].lstrip(os.sep)
-            m = top.resolve(rel_path)
-            assert m is not None
-
+            components = rel_path.split(os.sep) if rel_path else []
             for name in filenames + dirnames:
-                assert name not in m
-                new = m.setdefault(name, cls())
-                new.setparent(m)
+                top._add(components + [name])
         return top
 
     @classmethod
@@ -109,21 +103,24 @@ class Manifest(dict):
             if not ti.name.startswith(subdir):
                 continue
             rel_path = ti.name[len(subdir):]
-            try:
-                dirname, basename = rel_path.rsplit('/', 1)
-                m = top.resolve(dirname)
-            except ValueError:
-                m, dirname, basename = top, "", rel_path
-            assert m is not None
-            assert basename not in m
-            new = m.setdefault(basename, cls())
-            new.setparent(m)
+            top._add(rel_path.split('/'))
         tf.close()
         return top
 
     def __init__(self, *args, **kwargs):
         dict.__init__(self, *args, **kwargs)
         self._parent = None
+
+    def _add(self, path):
+        """Add the given path (a list of components) to this manifest."""
+        component = path.pop(0)
+        if path:
+            assert component in self
+            return self[component]._add(path)
+        assert component not in self
+        new = self.setdefault(component, self.__class__())
+        new.setparent(self)
+        return new
 
     def getparent(self):
         return self._parent() if self._parent is not None else None
