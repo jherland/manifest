@@ -15,9 +15,10 @@ class Manifest(dict):
 
     @staticmethod
     def parse_lines(f):
-        """Return (indent, token) for each logical line in the given file.
+        """Return (indent, token, attrs) for each logical line in 'f'.
 
-        The given file 'f' may be anything that can be iterated to yield lines.
+        The given 'f' may be anything that can be iterated to yield lines, e.g.
+        a file object, a StringIO object, a list of lines, etc.
         """
         indents = [0] # Stack of indent levels. Initial 0 is always present
         for linenum, line in enumerate(f):
@@ -39,7 +40,7 @@ class Manifest(dict):
                                       indent, indents[-1]))
 
             token = token.rstrip() # strip trailing WS
-            yield(len(indents) - 1, token)
+            yield(len(indents) - 1, token, {})
 
     @classmethod
     def parse(cls, f):
@@ -49,7 +50,7 @@ class Manifest(dict):
         """
         prev = cur = top = cls()
         level = 0
-        for indent, token in cls.parse_lines(f):
+        for indent, token, attrs in cls.parse_lines(f):
             if indent > level: # drill into the previous entry
                 cur = prev
                 level += 1
