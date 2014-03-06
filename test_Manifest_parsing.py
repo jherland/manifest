@@ -78,6 +78,19 @@ class Test_Manifest_parse_lines(unittest.TestCase):
     def test_empty_attrs(self):
         self.must_equal("foo {}", [(0, "foo", {})])
 
+    def test_size_attr(self):
+        self.must_equal("foo {size: 1}", [(0, "foo", {"size": 1})])
+
+    def test_two_attrs(self):
+        sha1 = "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef"
+        self.must_equal("foo {size: 1, sha1: %s}" % (sha1),
+                        [(0, "foo", {"size": 1, "sha1": sha1})])
+
+    def test_sha1_attr_lowered(self):
+        sha1 = "deadbeefDEADBEEFdeadbeefdeadbeefdeadbeef"
+        self.must_equal("foo {size: 1, sha1: %s}" % (sha1),
+                        [(0, "foo", {"size": 1, "sha1": sha1.lower()})])
+
     def test_unknown_attr(self):
         self.must_equal("foo { bar : baz }", [(0, "foo", {"bar": "baz"})])
 

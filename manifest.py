@@ -1,5 +1,26 @@
 from __future__ import print_function
 import weakref
+import re
+
+class AttributeHandler(object):
+    name = None
+
+    def parse(self, s):
+        raise NotImplementedError
+
+class SizeHandler(AttributeHandler):
+    name = "size"
+    parse = int
+
+class SHA1Handler(AttributeHandler):
+    name = "sha1"
+    sha1RE = re.compile(r'^[0-9a-f]{40}$')
+
+    def parse(self, s):
+        sha1 = s.strip().lower()
+        if not self.sha1RE.match(sha1):
+            raise ValueError("Not a valid SHA1 sum: '%s'" % (s))
+        return sha1
 
 class Manifest(dict):
     """Encapsulate a description of a file hierarchy.
@@ -13,11 +34,17 @@ class Manifest(dict):
     the parent (or None for a toplevel Manifest object).
     """
 
+    KnownAttrs = {}
+    for handler in [SizeHandler, SHA1Handler]:
+        KnownAttrs[handler.name] = handler()
+
     @classmethod
     def parse_attr(cls, key_s, value_s):
         """Canonicalize the given attribute key and value strings."""
         key = key_s.strip().lower()
         val = value_s.strip()
+        if key in cls.KnownAttrs:
+            val = cls.KnownAttrs[key].parse(val)
         return (key, val)
 
     @classmethod
