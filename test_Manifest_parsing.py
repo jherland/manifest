@@ -75,6 +75,12 @@ class Test_Manifest_parse_lines(unittest.TestCase):
         self.assertEqual(list(stream), [(0, "foo", {}), (0, "bar", {}),
                                         (1, "baz", {}), (2, "xyzzy", {})])
 
+    def test_empty_attrs(self):
+        self.must_equal("foo {}", [(0, "foo", {})])
+
+    def test_unknown_attr(self):
+        self.must_equal("foo { bar : baz }", [(0, "foo", {"bar": "baz"})])
+
 class Test_Manifest_parse(unittest.TestCase):
 
     def test_empty(self):

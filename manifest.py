@@ -13,8 +13,40 @@ class Manifest(dict):
     the parent (or None for a toplevel Manifest object).
     """
 
-    @staticmethod
-    def parse_lines(f):
+    @classmethod
+    def parse_attr(cls, key_s, value_s):
+        """Canonicalize the given attribute key and value strings."""
+        key = key_s.strip().lower()
+        val = value_s.strip()
+        return (key, val)
+
+    @classmethod
+    def parse_token(cls, token):
+        """Parse the given token into a (entry, attrs) tuple.
+
+        A token consists of an entry (file/directory name) and an optional
+        collection of attributes that apply to that entry. The general format
+        of a token is thus:
+            token_name WS* { attr_key: attr_val, attr_key: attr_val, ... }
+        """
+        # The final '{' separates the entry from the attributes
+        try:
+            entry, attr_s = token.rsplit('{', 1)
+        except ValueError: # no attributes
+            return (token, {})
+
+        assert attr_s.endswith('}')
+        attrs = {}
+        for s in attr_s[:-1].split(','):
+            if not s.strip():
+                continue
+            k, v = cls.parse_attr(*s.split(':', 1))
+            attrs[k] = v
+
+        return (entry.rstrip(), attrs)
+
+    @classmethod
+    def parse_lines(cls, f):
         """Return (indent, token, attrs) for each logical line in 'f'.
 
         The given 'f' may be anything that can be iterated to yield lines, e.g.
@@ -40,7 +72,8 @@ class Manifest(dict):
                                       indent, indents[-1]))
 
             token = token.rstrip() # strip trailing WS
-            yield(len(indents) - 1, token, {})
+            token, attrs = cls.parse_token(token) # split attrs out of token
+            yield(len(indents) - 1, token, attrs)
 
     @classmethod
     def parse(cls, f):
