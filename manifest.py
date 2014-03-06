@@ -1,6 +1,8 @@
 from __future__ import print_function
 import weakref
+import os
 import re
+import hashlib
 
 class AttributeHandler(object):
     name = None
@@ -8,9 +10,17 @@ class AttributeHandler(object):
     def parse(self, s):
         raise NotImplementedError
 
+    def from_path(self, path):
+        raise NotImplementedError
+
 class SizeHandler(AttributeHandler):
     name = "size"
     parse = int
+
+    def from_path(self, path):
+        if os.path.isfile(path):
+            return os.path.getsize(path)
+        return None # we consider non-files to have no size
 
 class SHA1Handler(AttributeHandler):
     name = "sha1"
@@ -21,6 +31,12 @@ class SHA1Handler(AttributeHandler):
         if not self.sha1RE.match(sha1):
             raise ValueError("Not a valid SHA1 sum: '%s'" % (s))
         return sha1
+
+    def from_path(self, path):
+        if os.path.isfile(path):
+            with open(path, "rb") as f:
+                return hashlib.sha1(f.read()).hexdigest()
+        return None # we consider non-files to have no SHA1
 
 class Manifest(dict):
     """Encapsulate a description of a file hierarchy.
@@ -131,14 +147,23 @@ class Manifest(dict):
         return top
 
     @classmethod
-    def from_walk(cls, path):
+    def from_walk(cls, path, attrkeys = None):
         """Generate a Manifest from the given directory structure.
 
         Recursively walk the directory structure rooted at 'path' and generate
         a Manifest tree that mirrors the structure. Return the top Manifest
         object, which corresponding to 'path'.
+
+        The optional 'attrkeys' specifies a set of known attributes to be
+        populated in the generated manifest. This set must be a subset of
+        KnownAttrs.keys().
         """
-        import os
+        if attrkeys:
+            for k in attrkeys:
+                assert k in cls.KnownAttrs.keys()
+        else:
+            attrkeys = set()
+
         if not os.path.isdir(path):
             raise ValueError("'%s' is not a directory" % (path))
 
@@ -148,7 +173,13 @@ class Manifest(dict):
             rel_path = dirpath[len(top_path):].lstrip(os.sep)
             components = rel_path.split(os.sep) if rel_path else []
             for name in filenames + dirnames:
-                top._add(components + [name])
+                attrs = {}
+                fullpath = os.path.join(dirpath, name)
+                for k in attrkeys:
+                    v = cls.KnownAttrs[k].from_path(fullpath)
+                    if v is not None:
+                        attrs[k] = v
+                top._add(components + [name], attrs)
         return top
 
     @classmethod

@@ -23,7 +23,7 @@ def unpacked_tar(tar_path):
     finally:
         shutil.rmtree(tempdir)
 
-def Manifest_from_walking_unpacked_tar(tar_path):
+def Manifest_from_walking_unpacked_tar(tar_path, attrs = None):
     """Create a Manifest from the given tar file.
 
     Convenience helper for unpacking the given tar file into a temp dir, and
@@ -31,4 +31,4 @@ def Manifest_from_walking_unpacked_tar(tar_path):
     """
     from manifest import Manifest
     with unpacked_tar(tar_path) as d:
-        return Manifest.from_walk(d)
+        return Manifest.from_walk(d, attrs)
