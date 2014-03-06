@@ -30,8 +30,13 @@ class Manifest(dict):
     is the Manifest object representing the children of that entry.
 
     In addition to merely wrapping a dict of Manifest objects, each Manifest
-    also has a parent attribute that (weakly) references the Manifest object of
+    also has a ._parent member that (weakly) references the Manifest object of
     the parent (or None for a toplevel Manifest object).
+
+    Finally, each Manifest also has a ._attrs member which is a dictionary of
+    attributes that apply to that Manifest. The dictionary is fundamentally
+    open/free-form, but there are some attributes (e.g. 'size' and 'sha1') that
+    carry special meaning.
     """
 
     KnownAttrs = {}
@@ -122,7 +127,7 @@ class Manifest(dict):
                     level -= 1
                 assert indent == level
 
-            prev = cur._add([token])
+            prev = cur._add([token], attrs)
         return top
 
     @classmethod
@@ -171,16 +176,19 @@ class Manifest(dict):
     def __init__(self, *args, **kwargs):
         dict.__init__(self, *args, **kwargs)
         self._parent = None
+        self._attrs = {}
 
-    def _add(self, path):
+    def _add(self, path, attrs = None):
         """Add the given path (a list of components) to this manifest."""
         component = path.pop(0)
-        if path:
-            assert component in self
-            return self[component]._add(path)
+        if path: # not a leaf entry
+            assert component in self # non-leafs must already exist in manifest
+            return self[component]._add(path, attrs)
         assert component not in self
         new = self.setdefault(component, self.__class__())
         new.setparent(self)
+        if attrs:
+            new._attrs = attrs
         return new
 
     def getparent(self):

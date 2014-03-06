@@ -135,5 +135,32 @@ class Test_Manifest_parse(unittest.TestCase):
         self.assertEqual(m["foo"].getparent(), m)
         self.assertEqual(m["foo"]["bar"].getparent(), m["foo"])
 
+    def test_empty_attrs(self):
+        m = Manifest.parse(["foo {}"])
+        self.assertEqual(m, {"foo": {}})
+        self.assertEqual(m["foo"]._attrs, {})
+
+    def test_size_attr(self):
+        m = Manifest.parse(["foo {size: 1}"])
+        self.assertEqual(m, {"foo": {}})
+        self.assertEqual(m["foo"]._attrs, {"size": 1})
+
+    def test_two_attrs(self):
+        sha1 = "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef"
+        m = Manifest.parse(["foo {size: 1, sha1: %s}" % (sha1)])
+        self.assertEqual(m, {"foo": {}})
+        self.assertEqual(m["foo"]._attrs, {"size": 1, "sha1": sha1})
+
+    def test_sha1_attr_lowered(self):
+        sha1 = "deadbeefDEADBEEFdeadbeefdeadbeefdeadbeef"
+        m = Manifest.parse(["foo {size: 1, sha1: %s}" % (sha1)])
+        self.assertEqual(m, {"foo": {}})
+        self.assertEqual(m["foo"]._attrs, {"size": 1, "sha1": sha1.lower()})
+
+    def test_unknown_attr(self):
+        m = Manifest.parse(["foo {bar: baz}"])
+        self.assertEqual(m, {"foo": {}})
+        self.assertEqual(m["foo"]._attrs, { "bar": "baz"})
+
 if __name__ == '__main__':
     unittest.main()
