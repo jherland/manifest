@@ -1,56 +1,5 @@
 from __future__ import print_function
 import weakref
-import os
-import re
-import hashlib
-
-class AttributeHandler(object):
-    name = None
-
-    def parse(self, s):
-        raise NotImplementedError
-
-    def from_path(self, path):
-        raise NotImplementedError
-
-    def from_TarInfo(self, ti):
-        raise NotImplementedError
-
-class SizeHandler(AttributeHandler):
-    name = "size"
-    parse = int
-
-    def from_path(self, path):
-        if os.path.isfile(path) and not os.path.islink(path):
-            return os.path.getsize(path)
-        return None # we consider non-files to have no size
-
-    def from_TarInfo(self, tf, ti):
-        if ti.isfile():
-            return ti.size
-        return None
-
-class SHA1Handler(AttributeHandler):
-    name = "sha1"
-    sha1RE = re.compile(r'^[0-9a-f]{40}$')
-
-    def parse(self, s):
-        sha1 = s.strip().lower()
-        if not self.sha1RE.match(sha1):
-            raise ValueError("Not a valid SHA1 sum: '%s'" % (s))
-        return sha1
-
-    def from_path(self, path):
-        if os.path.isfile(path) and not os.path.islink(path):
-            with open(path, "rb") as f:
-                return hashlib.sha1(f.read()).hexdigest()
-        return None # we consider non-files to have no SHA1
-
-    def from_TarInfo(self, tf, ti):
-        if ti.isfile():
-            f = tf.extractfile(ti)
-            return hashlib.sha1(f.read()).hexdigest()
-        return None
 
 class Manifest(dict):
     """Encapsulate a description of a file hierarchy.
@@ -68,10 +17,6 @@ class Manifest(dict):
     open/free-form, but there are some attributes (e.g. 'size' and 'sha1') that
     carry special meaning.
     """
-
-    KnownAttrs = {}
-    for handler in [SizeHandler, SHA1Handler]:
-        KnownAttrs[handler.name] = handler()
 
     @classmethod
     def parse(cls, f):
