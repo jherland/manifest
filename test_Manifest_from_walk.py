@@ -62,6 +62,7 @@ class Test_Manifest_from_walk(unittest.TestCase):
 class Test_Manifest_from_walk_w_attrs(unittest.TestCase):
 
     empty_sha1 = "da39a3ee5e6b4b0d3255bfef95601890afd80709"
+    empty_attrs = { "size": 0, "sha1": empty_sha1 }
 
     def must_equal(self, tar_path, expect, expect_attrs, attrkeys = None):
         if attrkeys is None:
@@ -92,41 +93,41 @@ class Test_Manifest_from_walk_w_attrs(unittest.TestCase):
     def test_single_file(self):
         self.must_equal("single_file.tar",
                         {"foo": {}},
-                        {"foo": { "size": 0, "sha1": self.empty_sha1 }})
+                        {"foo": self.empty_attrs})
 
     def test_two_files(self):
         self.must_equal("two_files.tar",
                         {"foo": {}, "bar": {}},
-                        {"foo": { "size": 0, "sha1": self.empty_sha1 },
-                         "bar": { "size": 0, "sha1": self.empty_sha1 }})
+                        {"foo": self.empty_attrs,
+                         "bar": self.empty_attrs})
 
     def test_file_and_empty_subdir(self):
         self.must_equal("file_and_empty_subdir.tar",
                         {"file": {}, "subdir": {}},
-                        {"file": { "size": 0, "sha1": self.empty_sha1 },
+                        {"file": self.empty_attrs,
                          "subdir": {}})
 
     def test_file_and_subdir(self):
         self.must_equal("file_and_subdir.tar",
                         {"file": {}, "subdir": {"foo": {}}},
-                        {"file": { "size": 0, "sha1": self.empty_sha1 },
+                        {"file": self.empty_attrs,
                          "subdir": {},
-                         "subdir/foo": { "size": 0, "sha1": self.empty_sha1 }})
+                         "subdir/foo": self.empty_attrs})
 
     def test_files_at_many_levels(self):
         self.must_equal("files_at_many_levels.tar",
                         {"foo": {}, "bar": {}, "baz":
                              {"foo": {}, "bar": {}, "baz":
                                   {"foo": {}, "bar": {}, "baz": {}}}},
-                        {"foo": { "size": 0, "sha1": self.empty_sha1 },
-                         "bar": { "size": 0, "sha1": self.empty_sha1 },
+                        {"foo": self.empty_attrs,
+                         "bar": self.empty_attrs,
                          "baz": {},
-                         "baz/foo": { "size": 0, "sha1": self.empty_sha1 },
-                         "baz/bar": { "size": 0, "sha1": self.empty_sha1 },
+                         "baz/foo": self.empty_attrs,
+                         "baz/bar": self.empty_attrs,
                          "baz/baz": {},
-                         "baz/baz/foo": { "size": 0, "sha1": self.empty_sha1 },
-                         "baz/baz/bar": { "size": 0, "sha1": self.empty_sha1 },
-                         "baz/baz/baz": { "size": 0, "sha1": self.empty_sha1 }})
+                         "baz/baz/foo": self.empty_attrs,
+                         "baz/baz/bar": self.empty_attrs,
+                         "baz/baz/baz": self.empty_attrs})
 
     def test_files_with_contents(self):
         self.must_equal("files_with_contents.tar", {
