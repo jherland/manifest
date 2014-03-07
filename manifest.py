@@ -300,7 +300,7 @@ class Manifest(dict):
         return m.resolve(rest) if (m is not None and rest) else m
 
     def walk(self, path = None):
-        """Analogue to os.walk(). Yield (path, entries) for each node in tree.
+        """Analogue to os.walk(). Yield (path, entries, attrs) recursively.
 
         The path is itself a list of path components navigating the manifest
         hierarchy. Join them with "/" as separator to get a relative path from
@@ -312,7 +312,7 @@ class Manifest(dict):
         if path is None:
             path = []
         names = sorted(self.keys())
-        yield path, names # Caller may modify names
+        yield path, names, self.getattrs() # Caller may modify names
         for name in names:
             for x in self[name].walk(path + [name]):
                 yield x
@@ -330,7 +330,7 @@ class Manifest(dict):
         StopIteration. The caller is responsible for aborting the iteration at
         an appropriate time.
         """
-        for path, names in self.walk():
+        for path, names, attrs in self.walk():
             if not path: # skip top-level/empty path
                 continue
             recurse = (yield "/".join(path))
