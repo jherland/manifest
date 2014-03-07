@@ -105,30 +105,8 @@ class Manifest(dict):
         tarfile module), and a new manifest is built (and returned) based on
         the contents of the tar archive.
         """
-        # In python2.6, TarFile objects are not context managers, so we cannot
-        # do "with tarfile.open(...) as tf:". Also, in python2.6 a TarFile's
-        # .errorlevel defaults to 0, whereas later versions default to 1.
-        if attrkeys:
-            for k in attrkeys:
-                assert k in cls.KnownAttrs.keys()
-        else:
-            attrkeys = set()
-
-        import tarfile
-        tf = tarfile.open(tarpath, errorlevel=1)
-        top = cls()
-        for ti in tf:
-            if not ti.name.startswith(subdir):
-                continue
-            attrs = {}
-            for k in attrkeys:
-                v = cls.KnownAttrs[k].from_TarInfo(tf, ti)
-                if v is not None:
-                    attrs[k] = v
-            rel_path = ti.name[len(subdir):]
-            top.add(rel_path.split('/'), attrs)
-        tf.close()
-        return top
+        from manifest_tar import ManifestTarWalker
+        return ManifestTarWalker(cls).build(tarpath, subdir, attrkeys)
 
     def __init__(self, *args, **kwargs):
         dict.__init__(self, *args, **kwargs)
