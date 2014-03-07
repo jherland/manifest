@@ -52,6 +52,13 @@ class Test_Manifest_from_walk(unittest.TestCase):
             }
         })
 
+    def test_files_with_contents(self):
+        self.must_equal("files_with_contents.tar",{
+            "foo": {},
+            "bar": {"baz": {}},
+            "symlink_to_bar_baz": {},
+        })
+
 class Test_Manifest_from_walk_w_attrs(unittest.TestCase):
 
     empty_sha1 = "da39a3ee5e6b4b0d3255bfef95601890afd80709"
@@ -120,6 +127,22 @@ class Test_Manifest_from_walk_w_attrs(unittest.TestCase):
                          "baz/baz/foo": { "size": 0, "sha1": self.empty_sha1 },
                          "baz/baz/bar": { "size": 0, "sha1": self.empty_sha1 },
                          "baz/baz/baz": { "size": 0, "sha1": self.empty_sha1 }})
+
+    def test_files_with_contents(self):
+        self.must_equal("files_with_contents.tar", {
+            "foo": {},
+            "bar": {"baz": {}},
+            "symlink_to_bar_baz": {}
+        }, {
+            "foo": {
+                "size": 12,
+                "sha1": "fc6da897c87c7b9c3b67d1d5af32085e561db793" },
+            "bar": {},
+            "bar/baz": {
+                "size": 12,
+                "sha1": "7508a86c26bcda1d3f298f67de33f7c48a3fe047" },
+            "symlink_to_bar_baz": {},
+        })
 
 if __name__ == '__main__':
     unittest.main()

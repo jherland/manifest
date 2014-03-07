@@ -18,7 +18,7 @@ class SizeHandler(AttributeHandler):
     parse = int
 
     def from_path(self, path):
-        if os.path.isfile(path):
+        if os.path.isfile(path) and not os.path.islink(path):
             return os.path.getsize(path)
         return None # we consider non-files to have no size
 
@@ -33,7 +33,7 @@ class SHA1Handler(AttributeHandler):
         return sha1
 
     def from_path(self, path):
-        if os.path.isfile(path):
+        if os.path.isfile(path) and not os.path.islink(path):
             with open(path, "rb") as f:
                 return hashlib.sha1(f.read()).hexdigest()
         return None # we consider non-files to have no SHA1
