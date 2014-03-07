@@ -40,6 +40,11 @@ class Test_Manifest_write(unittest.TestCase):
         self.must_equal(["foo", "\tbar", "\t\tbaz"],
                         "XXXfoo\nXXXXbar\nXXXXXbaz\n", indent = "X", level = 3)
 
+    def test_entries_w_attrs(self):
+        self.must_equal(
+            ["foo {}", "\tbar {size:123}", "\t\tbaz { xyzzy : zyxxy , a : b }"],
+            "foo\n\tbar {size: 123}\n\t\tbaz {a: b, xyzzy: zyxxy}\n")
+
 class Test_Manifest_resolve(unittest.TestCase):
 
     def test_empty(self):
