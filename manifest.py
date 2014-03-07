@@ -236,9 +236,16 @@ class Manifest(dict):
 
     def add(self, path, attrs = None):
         """Add the given path (a list of components) to this manifest."""
-        component = path.pop(0)
+        try:
+            component = path.pop(0)
+        except IndexError:
+            raise ValueError("Cannot add null path")
+        if not component:
+            raise ValueError("Cannot add empty path component")
+
         if path: # not a leaf entry
-            assert component in self # non-leafs must already exist in manifest
+            if component not in self: # non-leafs must already exist in manifest
+                raise ValueError("Cannot add child before parent")
             return self[component].add(path, attrs)
         assert component not in self
         new = self.setdefault(component, self.__class__())
