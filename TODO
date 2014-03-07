@@ -1,4 +1,3 @@
-- Move .write() into ManifestFile?
 - More efficient stat()ing in ManifestDirWalker
 - Similar refactoring in ManifestTarWalker
 - Consider splitting merge() and diff() out of Manifest class

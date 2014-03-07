@@ -1,4 +1,3 @@
-from __future__ import print_function
 import weakref
 
 class Manifest(dict):
@@ -90,30 +89,13 @@ class Manifest(dict):
     def setattrs(self, attrs):
         self._attrs = dict(attrs)
 
-    def _formattrs(self, attrkeys = None):
-        """Return a parseable string representation of this Manifest's attrs.
-
-        'attrkeys' is the set of attributes to be output, defaults to all.
-        """
-        ret = []
-        keys = self._attrs.keys()
-        if attrkeys is not None:
-            keys = filter(lambda k: k in attrkeys, keys)
-        for k in sorted(keys):
-            assert k in self._attrs
-            ret.append("%s: %s" % (k, self._attrs[k]))
-        return ret
-
     def write(self, f, level = 0, indent = "\t", attrkeys = None):
         """Write this Manifest in parse()able text format to the given file.
 
         'attrkeys' is the set of attributes to be output, defaults to all.
         """
-        for name, m in sorted(self.items()):
-            attrlist = m._formattrs(attrkeys)
-            attrs = " {%s}" % (", ".join(attrlist)) if attrlist else ""
-            print(indent * level + name + attrs, file=f)
-            m.write(f, level + 1, indent, attrkeys)
+        from manifest_file import ManifestFileWriter
+        ManifestFileWriter().write(self, f, level, indent, attrkeys)
 
     def resolve(self, path):
         """Resolve a relative pathspec against this Manifest."""
