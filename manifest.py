@@ -94,29 +94,8 @@ class Manifest(dict):
         populated in the generated manifest. This set must be a subset of
         KnownAttrs.keys().
         """
-        if attrkeys:
-            for k in attrkeys:
-                assert k in cls.KnownAttrs.keys()
-        else:
-            attrkeys = set()
-
-        if not os.path.isdir(path):
-            raise ValueError("'%s' is not a directory" % (path))
-
-        top, top_path = cls(), path.rstrip(os.sep)
-        for dirpath, dirnames, filenames in os.walk(path):
-            assert dirpath.startswith(top_path)
-            rel_path = dirpath[len(top_path):].lstrip(os.sep)
-            components = rel_path.split(os.sep) if rel_path else []
-            for name in filenames + dirnames:
-                attrs = {}
-                fullpath = os.path.join(dirpath, name)
-                for k in attrkeys:
-                    v = cls.KnownAttrs[k].from_path(fullpath)
-                    if v is not None:
-                        attrs[k] = v
-                top.add(components + [name], attrs)
-        return top
+        from manifest_dir import ManifestDirWalker
+        return ManifestDirWalker(cls).build(path, attrkeys)
 
     @classmethod
     def from_tar(cls, tarpath, subdir = "./", attrkeys = None):
