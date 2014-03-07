@@ -1,4 +1,6 @@
-- Refactor tests
+- Make ._add() public
+- Move .from_walk() with associated attribute handling into a separate class
+- Move .from_tar() with associated attribute handling into a separate class
 - Consider splitting merge() and diff() out of Manifest class
 - Provide an __init__.py to make us more like a proper Python package?
 - Add walk() functionality to drill into .tar files as if they were a
@@ -6,6 +8,6 @@
 - Add support for git trees?
 - Add support for wildcard entries? (This manifest will match zero or more
   entries at this level. Format: glob or regexp?)
-- Add support for entry-specific options, like size, approx size?, checksum
-  match, permission check, modification timestamp checks?
+- Add more support for per-entry attributes, like approximate size, permission
+  check, modification timestamp checks?
 - Add frontend for generating more human-friendly reports
