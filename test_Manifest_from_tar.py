@@ -30,6 +30,10 @@ class Test_Manifest_from_tar(unittest.TestCase):
         self.must_equal("file_and_subdir.tar",
                         {"file": {}, "subdir": {"foo": {}}})
 
+    def test_file_and_subdir_at_subdir(self):
+        m = Manifest.from_tar(t_path("file_and_subdir.tar"), "./subdir/")
+        self.assertEqual(m, {"foo": {}})
+
     def test_files_at_many_levels(self):
         self.must_equal("files_at_many_levels.tar", {
             "foo": {},
@@ -40,6 +44,11 @@ class Test_Manifest_from_tar(unittest.TestCase):
                 "baz": {"foo": {}, "bar": {}, "baz": {}}
             }
         })
+
+    def test_files_at_many_levels_at_subdir(self):
+        m = Manifest.from_tar(t_path("files_at_many_levels.tar"), "./baz/")
+        self.assertEqual(m, {
+            "foo": {}, "bar": {}, "baz": { "foo": {}, "bar": {}, "baz": {} } })
 
     def test_from_tar_against_walking_unpacked_tars(self):
         for tar in TEST_TARS:
