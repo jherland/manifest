@@ -66,7 +66,7 @@ class Test_Manifest_from_tar_w_attrs(unittest.TestCase):
         m = Manifest.from_tar(t_path(tar_path), attrkeys = attrkeys)
         self.assertEqual(m, expect)
         for path, e_attrs in expect_attrs.items():
-            self.assertEqual(m.resolve(path)._attrs, e_attrs)
+            self.assertEqual(m.resolve(path).getattrs(), e_attrs)
 
     def test_empty_dir(self):
         self.must_equal("empty.tar", {}, {})

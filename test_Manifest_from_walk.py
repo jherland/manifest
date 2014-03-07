@@ -69,7 +69,7 @@ class Test_Manifest_from_walk_w_attrs(unittest.TestCase):
         m = Manifest_from_walking_unpacked_tar(tar_path, attrkeys)
         self.assertEqual(m, expect)
         for path, e_attrs in expect_attrs.items():
-            self.assertEqual(m.resolve(path)._attrs, e_attrs)
+            self.assertEqual(m.resolve(path).getattrs(), e_attrs)
 
     def test_empty_dir(self):
         self.must_equal("empty.tar", {}, {})
