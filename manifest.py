@@ -13,6 +13,9 @@ class AttributeHandler(object):
     def from_path(self, path):
         raise NotImplementedError
 
+    def from_TarInfo(self, ti):
+        raise NotImplementedError
+
 class SizeHandler(AttributeHandler):
     name = "size"
     parse = int
@@ -21,6 +24,11 @@ class SizeHandler(AttributeHandler):
         if os.path.isfile(path) and not os.path.islink(path):
             return os.path.getsize(path)
         return None # we consider non-files to have no size
+
+    def from_TarInfo(self, tf, ti):
+        if ti.isfile():
+            return ti.size
+        return None
 
 class SHA1Handler(AttributeHandler):
     name = "sha1"
@@ -37,6 +45,12 @@ class SHA1Handler(AttributeHandler):
             with open(path, "rb") as f:
                 return hashlib.sha1(f.read()).hexdigest()
         return None # we consider non-files to have no SHA1
+
+    def from_TarInfo(self, tf, ti):
+        if ti.isfile():
+            f = tf.extractfile(ti)
+            return hashlib.sha1(f.read()).hexdigest()
+        return None
 
 class Manifest(dict):
     """Encapsulate a description of a file hierarchy.
@@ -183,7 +197,7 @@ class Manifest(dict):
         return top
 
     @classmethod
-    def from_tar(cls, tarpath, subdir = "./"):
+    def from_tar(cls, tarpath, subdir = "./", attrkeys = None):
         """Generate a Manifest from the given tar file.
 
         The given 'tarpath' filename is processed (using python's built-in
@@ -193,14 +207,25 @@ class Manifest(dict):
         # In python2.6, TarFile objects are not context managers, so we cannot
         # do "with tarfile.open(...) as tf:". Also, in python2.6 a TarFile's
         # .errorlevel defaults to 0, whereas later versions default to 1.
+        if attrkeys:
+            for k in attrkeys:
+                assert k in cls.KnownAttrs.keys()
+        else:
+            attrkeys = set()
+
         import tarfile
         tf = tarfile.open(tarpath, errorlevel=1)
         top = cls()
         for ti in tf:
             if not ti.name.startswith(subdir):
                 continue
+            attrs = {}
+            for k in attrkeys:
+                v = cls.KnownAttrs[k].from_TarInfo(tf, ti)
+                if v is not None:
+                    attrs[k] = v
             rel_path = ti.name[len(subdir):]
-            top._add(rel_path.split('/'))
+            top._add(rel_path.split('/'), attrs)
         tf.close()
         return top
 
