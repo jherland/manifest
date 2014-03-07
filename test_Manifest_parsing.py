@@ -8,15 +8,19 @@ except ImportError:
         from io import StringIO # python3
 
 from manifest import Manifest
+from manifest_file import ManifestFileParser
 
-class Test_Manifest_parse_lines(unittest.TestCase):
+class Test_ManifestFileParser_parse_lines(unittest.TestCase):
+
+    def setUp(self):
+        self.mfp = ManifestFileParser()
 
     def must_equal(self, input_string, expect):
-        stream = Manifest.parse_lines(StringIO(input_string))
+        stream = self.mfp.parse_lines(StringIO(input_string))
         self.assertEqual(list(stream), expect)
 
     def must_raise(self, input_string, exception):
-        stream = Manifest.parse_lines(StringIO(input_string))
+        stream = self.mfp.parse_lines(StringIO(input_string))
         self.assertRaises(exception, list, stream)
 
     def test_empty(self):
@@ -71,7 +75,7 @@ class Test_Manifest_parse_lines(unittest.TestCase):
                         [(0, "This is a token with spaces", {})])
 
     def test_list_of_strings(self):
-        stream = Manifest.parse_lines(["foo", "bar", "\tbaz", "\t    xyzzy"])
+        stream = self.mfp.parse_lines(["foo", "bar", "\tbaz", "\t    xyzzy"])
         self.assertEqual(list(stream), [(0, "foo", {}), (0, "bar", {}),
                                         (1, "baz", {}), (2, "xyzzy", {})])
 
