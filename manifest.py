@@ -157,7 +157,7 @@ class Manifest(dict):
                     level -= 1
                 assert indent == level
 
-            prev = cur._add([token], attrs)
+            prev = cur.add([token], attrs)
         return top
 
     @classmethod
@@ -193,7 +193,7 @@ class Manifest(dict):
                     v = cls.KnownAttrs[k].from_path(fullpath)
                     if v is not None:
                         attrs[k] = v
-                top._add(components + [name], attrs)
+                top.add(components + [name], attrs)
         return top
 
     @classmethod
@@ -225,7 +225,7 @@ class Manifest(dict):
                 if v is not None:
                     attrs[k] = v
             rel_path = ti.name[len(subdir):]
-            top._add(rel_path.split('/'), attrs)
+            top.add(rel_path.split('/'), attrs)
         tf.close()
         return top
 
@@ -234,12 +234,12 @@ class Manifest(dict):
         self._parent = None
         self._attrs = {}
 
-    def _add(self, path, attrs = None):
+    def add(self, path, attrs = None):
         """Add the given path (a list of components) to this manifest."""
         component = path.pop(0)
         if path: # not a leaf entry
             assert component in self # non-leafs must already exist in manifest
-            return self[component]._add(path, attrs)
+            return self[component].add(path, attrs)
         assert component not in self
         new = self.setdefault(component, self.__class__())
         new.setparent(self)
