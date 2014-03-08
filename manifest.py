@@ -18,21 +18,6 @@ class Manifest(dict):
     """
 
     @classmethod
-    def from_walk(cls, path, attrkeys = None):
-        """Generate a Manifest from the given directory structure.
-
-        Recursively walk the directory structure rooted at 'path' and generate
-        a Manifest tree that mirrors the structure. Return the top Manifest
-        object, which corresponding to 'path'.
-
-        The optional 'attrkeys' specifies a set of known attributes to be
-        populated in the generated manifest. This set must be a subset of
-        KnownAttrs.keys().
-        """
-        from manifest_dir import ManifestDirWalker
-        return ManifestDirWalker(cls).build(path, attrkeys)
-
-    @classmethod
     def from_tar(cls, tarpath, subdir = "./", attrkeys = None):
         """Generate a Manifest from the given tar file.
 

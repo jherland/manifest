@@ -2,6 +2,7 @@ import unittest
 
 from manifest import Manifest
 from manifest_file import ManifestFileParser
+from manifest_dir import ManifestDirWalker
 from test_utils import unpacked_tar, Manifest_from_walking_unpacked_tar
 
 class Test_Manifest_walk_visits_all_paths(unittest.TestCase):
@@ -30,7 +31,7 @@ class Test_Manifest_walk_visits_all_paths(unittest.TestCase):
 
     def test_file_and_subdir_trailing_slash(self):
         with unpacked_tar("file_and_subdir.tar") as d:
-            m = Manifest.from_walk(d + "/")
+            m = ManifestDirWalker().build(d + "/")
         self.assertEqual(["/".join(path) for path, entries, attrs in m.walk()],
                          ["", "file", "subdir", "subdir/foo"])
 
@@ -291,7 +292,7 @@ class Test_Manifest_paths(unittest.TestCase):
 
     def test_file_and_subdir_trailing_slash(self):
         with unpacked_tar("file_and_subdir.tar") as d:
-            m = Manifest.from_walk(d + "/")
+            m = ManifestDirWalker().build(d + "/")
         self.assertEqual(list(m.paths()), ["file", "subdir", "subdir/foo"])
 
     def test_files_at_many_levels(self):
