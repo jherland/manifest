@@ -1,31 +1,25 @@
 import unittest
 
 from manifest import Manifest
-from manifest_dir import ManifestDirWalker
-from test_utils import t_path, unpacked_tar, Manifest_from_walking_unpacked_tar
+from manifest_tar import ManifestTarWalker
+from test_utils import t_path, TEST_TARS, Manifest_from_walking_unpacked_tar
 
-class Test_Manifest_from_walk(unittest.TestCase):
+class Test_ManifestTarWalker(unittest.TestCase):
 
     def setUp(self):
-        self.mdw = ManifestDirWalker(Manifest)
+        self.mtw = ManifestTarWalker(Manifest)
 
     def must_equal(self, tar_path, expect):
-        m = Manifest_from_walking_unpacked_tar(tar_path)
-        self.assertEqual(m, expect)
+        self.assertEqual(self.mtw.build(t_path(tar_path)), expect)
 
     def test_missing_raises_ValueError(self):
-        self.assertRaises(ValueError, self.mdw.build, t_path("missing"))
+        self.assertRaises(Exception, self.mtw.build, t_path("missing.tar"))
 
-    def test_not_a_dir(self):
-        self.assertRaises(ValueError, self.mdw.build, t_path("plain_file"))
+    def test_not_a_tar(self):
+        self.assertRaises(Exception, self.mtw.build, t_path("not_tar"))
 
     def test_empty_dir(self):
         self.must_equal("empty.tar", {})
-
-    def test_empty_dir_trailing_slash(self):
-        with unpacked_tar("empty.tar") as d:
-            m = self.mdw.build(d + "/")
-        self.assertEqual(m, {})
 
     def test_single_file(self):
         self.must_equal("single_file.tar", {"foo": {}})
@@ -40,13 +34,12 @@ class Test_Manifest_from_walk(unittest.TestCase):
         self.must_equal("file_and_subdir.tar",
                         {"file": {}, "subdir": {"foo": {}}})
 
-    def test_file_and_subdir_trailing_slash(self):
-        with unpacked_tar("file_and_subdir.tar") as d:
-            m = self.mdw.build(d + "/")
-        self.assertEqual(m, {"file": {}, "subdir": {"foo": {}}})
+    def test_file_and_subdir_at_subdir(self):
+        m = self.mtw.build(t_path("file_and_subdir.tar"), "./subdir/")
+        self.assertEqual(m, {"foo": {}})
 
     def test_files_at_many_levels(self):
-        self.must_equal("files_at_many_levels.tar",{
+        self.must_equal("files_at_many_levels.tar", {
             "foo": {},
             "bar": {},
             "baz": {
@@ -56,14 +49,18 @@ class Test_Manifest_from_walk(unittest.TestCase):
             }
         })
 
-    def test_files_with_contents(self):
-        self.must_equal("files_with_contents.tar",{
-            "foo": {},
-            "bar": {"baz": {}},
-            "symlink_to_bar_baz": {},
-        })
+    def test_files_at_many_levels_at_subdir(self):
+        m = self.mtw.build(t_path("files_at_many_levels.tar"), "./baz/")
+        self.assertEqual(m, {
+            "foo": {}, "bar": {}, "baz": { "foo": {}, "bar": {}, "baz": {} } })
 
-class Test_Manifest_from_walk_w_attrs(unittest.TestCase):
+    def test_from_tar_against_walking_unpacked_tars(self):
+        for tar in TEST_TARS:
+            m_walk = Manifest_from_walking_unpacked_tar(tar)
+            m_tar = self.mtw.build(tar)
+            self.assertEqual(m_tar, m_walk)
+
+class Test_ManifestTarWalker_w_attrs(unittest.TestCase):
 
     empty_sha1 = "da39a3ee5e6b4b0d3255bfef95601890afd80709"
     empty_attrs = { "size": 0, "sha1": empty_sha1 }
@@ -71,7 +68,7 @@ class Test_Manifest_from_walk_w_attrs(unittest.TestCase):
     def must_equal(self, tar_path, expect, expect_attrs, attrkeys = None):
         if attrkeys is None:
             attrkeys = ["size", "sha1"]
-        m = Manifest_from_walking_unpacked_tar(tar_path, attrkeys)
+        m = ManifestTarWalker().build(t_path(tar_path), attrkeys = attrkeys)
         self.assertEqual(m, expect)
         for path, e_attrs in expect_attrs.items():
             self.assertEqual(m.resolve(path).getattrs(), e_attrs)
