@@ -17,17 +17,6 @@ class Manifest(dict):
     carry special meaning.
     """
 
-    @classmethod
-    def from_tar(cls, tarpath, subdir = "./", attrkeys = None):
-        """Generate a Manifest from the given tar file.
-
-        The given 'tarpath' filename is processed (using python's built-in
-        tarfile module), and a new manifest is built (and returned) based on
-        the contents of the tar archive.
-        """
-        from manifest_tar import ManifestTarWalker
-        return ManifestTarWalker(cls).build(tarpath, subdir, attrkeys)
-
     def __init__(self):
         dict.__init__(self)
         self._parent = None
