@@ -1,6 +1,7 @@
 import unittest
 
 from manifest import Manifest
+from manifest_file import ManifestFileParser
 from test_utils import unpacked_tar, Manifest_from_walking_unpacked_tar
 
 class Test_Manifest_walk_visits_all_paths(unittest.TestCase):
@@ -48,7 +49,7 @@ class Test_Manifest_walk_visits_all_paths(unittest.TestCase):
         ])
 
     def test_nonrecursive(self):
-        m = Manifest.parse("""\
+        m = ManifestFileParser().build("""\
             foo
                 child1
                 child2
@@ -71,7 +72,7 @@ class Test_Manifest_walk_visits_all_paths(unittest.TestCase):
 class Test_Manifest_walk_selective_recurse(unittest.TestCase):
 
     def setUp(self):
-        self.m = Manifest.parse("""\
+        self.m = ManifestFileParser().build("""\
             a
                 a
                     a
@@ -307,7 +308,7 @@ class Test_Manifest_paths(unittest.TestCase):
         ])
 
     def test_nonrecursive(self):
-        m = Manifest.parse("""\
+        m = ManifestFileParser().build("""\
             foo
                 child1
                 child2

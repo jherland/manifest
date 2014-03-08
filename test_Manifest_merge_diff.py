@@ -1,9 +1,13 @@
 import unittest
 
 from manifest import Manifest
+from manifest_file import ManifestFileParser
 from test_utils import TEST_TARS, Manifest_from_walking_unpacked_tar
 
 class Test_Manifest_merge(unittest.TestCase):
+
+    def setUp(self):
+        self.mfp = ManifestFileParser(Manifest)
 
     def test_nothing(self):
         self.assertEqual(list(Manifest.merge()), [])
@@ -22,21 +26,21 @@ class Test_Manifest_merge(unittest.TestCase):
 
     def test_single_file_x2(self):
         m1 = Manifest_from_walking_unpacked_tar("single_file.tar")
-        m2 = Manifest.parse(["foo"])
+        m2 = self.mfp.build(["foo"])
         self.assertEqual(list(Manifest.merge(m1, m2)), [("foo", "foo")])
 
     def test_three_different_singles(self):
-        m1, m2, m3 = map(Manifest.parse, (["foo"], ["bar"], ["baz"]))
+        m1, m2, m3 = map(self.mfp.build, (["foo"], ["bar"], ["baz"]))
         self.assertEqual(list(Manifest.merge(m1, m2, m3)), [
             (None, "bar", None), (None, None, "baz"), ("foo", None, None)])
 
     def test_three_mixed_singles(self):
-        m1, m2, m3 = map(Manifest.parse, (["foo"], ["bar"], ["foo"]))
+        m1, m2, m3 = map(self.mfp.build, (["foo"], ["bar"], ["foo"]))
         self.assertEqual(list(Manifest.merge(m1, m2, m3)), [
             (None, "bar", None), ("foo", None, "foo")])
 
     def test_three_with_overlap(self):
-        ms = map(Manifest.parse,
+        ms = map(self.mfp.build,
                  (["foo", "same"], ["bar", "same"], ["baz", "same"]))
         self.assertEqual(list(Manifest.merge(*ms)), [
             (None, "bar", None), (None, None, "baz"), ("foo", None, None),
@@ -49,9 +53,9 @@ class Test_Manifest_merge(unittest.TestCase):
             ("file", "file"), ("subdir", "subdir"), (None, "subdir/foo")])
 
     def test_custom_key(self):
-        m1 = Manifest.parse(["1foo", "2bar", "3baz"])
-        m2 = Manifest.parse(["abc", "def", "ghi"])
-        m3 = Manifest.parse(["123", "456", "789"])
+        m1 = self.mfp.build(["1foo", "2bar", "3baz"])
+        m2 = self.mfp.build(["abc", "def", "ghi"])
+        m3 = self.mfp.build(["123", "456", "789"])
         self.assertEqual(
             list(Manifest.merge(m1, m2, m3, key = lambda px: True)), [
                 ("1foo", "abc", "123"),
@@ -59,9 +63,9 @@ class Test_Manifest_merge(unittest.TestCase):
                 ("3baz", "ghi", "789")])
 
     def test_nonrecursive(self):
-        m1 = Manifest.parse(["bar", "foo", "  bar", "  foo"])
-        m2 = Manifest.parse(["foo", "  foo", "xyzzy"])
-        m3 = Manifest.parse(["foo", "  bar", "    baz", "  foo", "    foo"])
+        m1 = self.mfp.build(["bar", "foo", "  bar", "  foo"])
+        m2 = self.mfp.build(["foo", "  foo", "xyzzy"])
+        m3 = self.mfp.build(["foo", "  bar", "    baz", "  foo", "    foo"])
         self.assertEqual(list(Manifest.merge(m1, m2, m3)), [
             ("bar", None, None),
             ("foo", "foo", "foo"),
@@ -111,7 +115,7 @@ class Test_Manifest_diff(unittest.TestCase):
 
     def test_diff_empties(self):
         m1 = Manifest()
-        m2 = Manifest.parse([""])
+        m2 = ManifestFileParser().build([""])
         m3 = Manifest_from_walking_unpacked_tar("empty.tar")
         self.assertEqual(list(Manifest.diff(m1, m2)), [])
         self.assertEqual(list(Manifest.diff(m1, m3)), [])
@@ -186,7 +190,7 @@ class Test_Manifest_diff(unittest.TestCase):
             (None, "baz/foo")])
 
     def test_min_max_diff_with_diff_at_muliples_levels(self):
-        m1 = Manifest.parse("""\
+        m1 = ManifestFileParser().build("""\
             1foo
             2bar
                 1xyzzy
@@ -195,7 +199,7 @@ class Test_Manifest_diff(unittest.TestCase):
                 3diff
             3baz
             """.split("\n"))
-        m2 = Manifest.parse("""\
+        m2 = ManifestFileParser().build("""\
             1foo
             2bar
                 1xyzzy

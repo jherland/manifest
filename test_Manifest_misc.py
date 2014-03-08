@@ -8,7 +8,7 @@ except ImportError:
         from io import StringIO # python3
 
 from manifest import Manifest
-from manifest_file import ManifestFileWriter
+from manifest_file import ManifestFileParser, ManifestFileWriter
 
 class Test_Manifest_add(unittest.TestCase):
 
@@ -62,7 +62,7 @@ class Test_Manifest_add(unittest.TestCase):
 class Test_ManifestFileWriter(unittest.TestCase):
 
     def must_equal(self, lines, expect, *args, **kwargs):
-        m = Manifest.parse(lines)
+        m = ManifestFileParser().build(lines)
         s = StringIO()
         ManifestFileWriter().write(m, s, *args, **kwargs)
         self.assertEqual(s.getvalue(), expect)
@@ -97,27 +97,30 @@ class Test_ManifestFileWriter(unittest.TestCase):
 
 class Test_Manifest_resolve(unittest.TestCase):
 
+    def setUp(self):
+        self.mfp = ManifestFileParser()
+
     def test_empty(self):
         m = Manifest()
         self.assertTrue(m.resolve("") is m)
 
     def test_single_entry(self):
-        m = Manifest.parse(["foo"])
+        m = self.mfp.build(["foo"])
         self.assertTrue(m.resolve("") is m)
         self.assertTrue(m.resolve("foo") is m["foo"])
 
     def test_missing_is_None(self):
-        m = Manifest.parse(["foo"])
+        m = self.mfp.build(["foo"])
         self.assertTrue(m.resolve("bar") is None)
 
     def test_grandchild(self):
-        m = Manifest.parse(["foo", "\tbar"])
+        m = self.mfp.build(["foo", "\tbar"])
         self.assertTrue(m.resolve("") is m)
         self.assertTrue(m.resolve("foo") is m["foo"])
         self.assertTrue(m.resolve("foo/bar") is m["foo"]["bar"])
 
     def test_dot_path(self):
-        m = Manifest.parse(["foo", "\tbar"])
+        m = self.mfp.build(["foo", "\tbar"])
         self.assertTrue(m.resolve("./foo") is m["foo"])
         self.assertTrue(m.resolve("foo/./") is m["foo"])
         self.assertTrue(m.resolve("foo/./bar") is m["foo"]["bar"])
@@ -125,7 +128,7 @@ class Test_Manifest_resolve(unittest.TestCase):
         self.assertTrue(m.resolve("./foo/./bar/./") is m["foo"]["bar"])
 
     def test_dotdot_path(self):
-        m = Manifest.parse(["foo", "\tbar"])
+        m = self.mfp.build(["foo", "\tbar"])
         self.assertTrue(m.resolve("foo/..") is m)
         self.assertTrue(m.resolve("foo/../foo") is m["foo"])
         self.assertTrue(m.resolve("foo/../foo/bar") is m["foo"]["bar"])
@@ -134,7 +137,7 @@ class Test_Manifest_resolve(unittest.TestCase):
         self.assertTrue(m.resolve("./foo/bar/../..") is m)
 
     def test_excessive_dotdot_fails(self):
-        m = Manifest.parse(["foo", "\tbar"])
+        m = self.mfp.build(["foo", "\tbar"])
         self.assertTrue(m.resolve("..") is None)
         self.assertTrue(m.resolve("../") is None)
         self.assertTrue(m.resolve("foo/../..") is None)

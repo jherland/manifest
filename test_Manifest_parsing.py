@@ -98,71 +98,74 @@ class Test_ManifestFileParser_parse_lines(unittest.TestCase):
     def test_unknown_attr(self):
         self.must_equal("foo { bar : baz }", [(0, "foo", {"bar": "baz"})])
 
-class Test_Manifest_parse(unittest.TestCase):
+class Test_ManifestFileParser_build(unittest.TestCase):
+
+    def setUp(self):
+        self.mfp = ManifestFileParser()
 
     def test_empty(self):
-        m = Manifest.parse(StringIO(""))
+        m = self.mfp.build(StringIO(""))
         self.assertEqual(m, {})
 
     def test_single_word(self):
-        m = Manifest.parse(StringIO("foo"))
+        m = self.mfp.build(StringIO("foo"))
         self.assertEqual(m, {"foo": {}})
 
     def test_two_words(self):
-        m = Manifest.parse(StringIO("foo\nbar"))
+        m = self.mfp.build(StringIO("foo\nbar"))
         self.assertEqual(m, {"foo": {}, "bar": {}})
 
     def test_entry_with_child(self):
-        m = Manifest.parse(StringIO("foo\n\tbar"))
+        m = self.mfp.build(StringIO("foo\n\tbar"))
         self.assertEqual(m, {"foo": {"bar": {}}})
 
     def test_entry_with_children(self):
-        m = Manifest.parse(StringIO("foo\n\tbar\n\tbaz"))
+        m = self.mfp.build(StringIO("foo\n\tbar\n\tbaz"))
         self.assertEqual(m, {"foo": {"bar": {}, "baz": {}}})
 
     def test_entry_with_child_and_sibling(self):
-        m = Manifest.parse(StringIO("foo\n\tbar\nfooz"))
+        m = self.mfp.build(StringIO("foo\n\tbar\nfooz"))
         self.assertEqual(m, {"foo": {"bar": {}}, "fooz": {}})
 
     def test_entry_with_grandchild(self):
-        m = Manifest.parse(StringIO("foo\n\tbar\n\t\tbaz"))
+        m = self.mfp.build(StringIO("foo\n\tbar\n\t\tbaz"))
         self.assertEqual(m, {"foo": {"bar": {"baz": {}}}})
 
     def test_entry_with_grandchild_and_sibling(self):
-        m = Manifest.parse(StringIO("foo\n\tbar\n\t\tbaz\nxyzzy"))
+        m = self.mfp.build(StringIO("foo\n\tbar\n\t\tbaz\nxyzzy"))
         self.assertEqual(m, {"foo": {"bar": {"baz": {}}}, "xyzzy": {}})
 
     def test_parent_refs(self):
-        m = Manifest.parse(StringIO("foo\n\tbar"))
+        m = self.mfp.build(StringIO("foo\n\tbar"))
         self.assertEqual(m, {"foo": {"bar": {}}})
         self.assertEqual(m.getparent(), None)
         self.assertEqual(m["foo"].getparent(), m)
         self.assertEqual(m["foo"]["bar"].getparent(), m["foo"])
 
     def test_empty_attrs(self):
-        m = Manifest.parse(["foo {}"])
+        m = self.mfp.build(["foo {}"])
         self.assertEqual(m, {"foo": {}})
         self.assertEqual(m["foo"].getattrs(), {})
 
     def test_size_attr(self):
-        m = Manifest.parse(["foo {size: 1}"])
+        m = self.mfp.build(["foo {size: 1}"])
         self.assertEqual(m, {"foo": {}})
         self.assertEqual(m["foo"].getattrs(), {"size": 1})
 
     def test_two_attrs(self):
         sha1 = "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef"
-        m = Manifest.parse(["foo {size: 1, sha1: %s}" % (sha1)])
+        m = self.mfp.build(["foo {size: 1, sha1: %s}" % (sha1)])
         self.assertEqual(m, {"foo": {}})
         self.assertEqual(m["foo"].getattrs(), {"size": 1, "sha1": sha1})
 
     def test_sha1_attr_lowered(self):
         sha1 = "deadbeefDEADBEEFdeadbeefdeadbeefdeadbeef"
-        m = Manifest.parse(["foo {size: 1, sha1: %s}" % (sha1)])
+        m = self.mfp.build(["foo {size: 1, sha1: %s}" % (sha1)])
         self.assertEqual(m, {"foo": {}})
         self.assertEqual(m["foo"].getattrs(), {"size": 1, "sha1": sha1.lower()})
 
     def test_unknown_attr(self):
-        m = Manifest.parse(["foo {bar: baz}"])
+        m = self.mfp.build(["foo {bar: baz}"])
         self.assertEqual(m, {"foo": {}})
         self.assertEqual(m["foo"].getattrs(), { "bar": "baz"})
 

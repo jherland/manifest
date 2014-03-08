@@ -18,15 +18,6 @@ class Manifest(dict):
     """
 
     @classmethod
-    def parse(cls, f):
-        """Parse the given file and return the resulting toplevel Manifest.
-
-        The given file 'f' may be anything that can be iterated to yield lines.
-        """
-        from manifest_file import ManifestFileParser
-        return ManifestFileParser(cls).build(f)
-
-    @classmethod
     def from_walk(cls, path, attrkeys = None):
         """Generate a Manifest from the given directory structure.
 
