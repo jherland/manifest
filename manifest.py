@@ -52,8 +52,8 @@ class Manifest(dict):
         from manifest_tar import ManifestTarWalker
         return ManifestTarWalker(cls).build(tarpath, subdir, attrkeys)
 
-    def __init__(self, *args, **kwargs):
-        dict.__init__(self, *args, **kwargs)
+    def __init__(self):
+        dict.__init__(self)
         self._parent = None
         self._attrs = {}
 
