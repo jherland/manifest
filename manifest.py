@@ -89,14 +89,6 @@ class Manifest(dict):
     def setattrs(self, attrs):
         self._attrs = dict(attrs)
 
-    def write(self, f, level = 0, indent = "\t", attrkeys = None):
-        """Write this Manifest in parse()able text format to the given file.
-
-        'attrkeys' is the set of attributes to be output, defaults to all.
-        """
-        from manifest_file import ManifestFileWriter
-        ManifestFileWriter().write(self, f, level, indent, attrkeys)
-
     def resolve(self, path):
         """Resolve a relative pathspec against this Manifest."""
         try:

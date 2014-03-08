@@ -8,6 +8,7 @@ except ImportError:
         from io import StringIO # python3
 
 from manifest import Manifest
+from manifest_file import ManifestFileWriter
 
 class Test_Manifest_add(unittest.TestCase):
 
@@ -58,12 +59,12 @@ class Test_Manifest_add(unittest.TestCase):
         self.assertEqual(self.m["foo"]["bar"].getattrs(),
                          {"size": 123, "bar": "baz"})
 
-class Test_Manifest_write(unittest.TestCase):
+class Test_ManifestFileWriter(unittest.TestCase):
 
     def must_equal(self, lines, expect, *args, **kwargs):
         m = Manifest.parse(lines)
         s = StringIO()
-        m.write(s, *args, **kwargs)
+        ManifestFileWriter().write(m, s, *args, **kwargs)
         self.assertEqual(s.getvalue(), expect)
 
     def test_empty(self):
