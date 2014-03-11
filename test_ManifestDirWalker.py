@@ -66,11 +66,12 @@ class Test_ManifestDirWalker(unittest.TestCase):
 class Test_ManifestDirWalker_w_attrs(unittest.TestCase):
 
     empty_sha1 = "da39a3ee5e6b4b0d3255bfef95601890afd80709"
-    empty_attrs = { "size": 0, "sha1": empty_sha1 }
+    empty_attrs = { "mode": 0o100644, "size": 0, "sha1": empty_sha1 }
+    dir_attrs = { "mode": 0o040755 }
 
     def must_equal(self, tar_path, expect, expect_attrs, attrkeys = None):
         if attrkeys is None:
-            attrkeys = ["size", "sha1"]
+            attrkeys = ["size", "sha1", "mode"]
         m = Manifest_from_walking_unpacked_tar(tar_path, attrkeys)
         self.assertEqual(m, expect)
         for path, e_attrs in expect_attrs.items():
@@ -94,6 +95,12 @@ class Test_ManifestDirWalker_w_attrs(unittest.TestCase):
                         {"foo": { "sha1": self.empty_sha1 }},
                         ["sha1"])
 
+    def test_single_file_attrs_mode(self):
+        self.must_equal("single_file.tar",
+                        {"foo": {}},
+                        {"foo": { "mode": 0o100644 }},
+                        ["mode"])
+
     def test_single_file(self):
         self.must_equal("single_file.tar",
                         {"foo": {}},
@@ -109,13 +116,13 @@ class Test_ManifestDirWalker_w_attrs(unittest.TestCase):
         self.must_equal("file_and_empty_subdir.tar",
                         {"file": {}, "subdir": {}},
                         {"file": self.empty_attrs,
-                         "subdir": {}})
+                         "subdir": self.dir_attrs})
 
     def test_file_and_subdir(self):
         self.must_equal("file_and_subdir.tar",
                         {"file": {}, "subdir": {"foo": {}}},
                         {"file": self.empty_attrs,
-                         "subdir": {},
+                         "subdir": self.dir_attrs,
                          "subdir/foo": self.empty_attrs})
 
     def test_files_at_many_levels(self):
@@ -125,10 +132,10 @@ class Test_ManifestDirWalker_w_attrs(unittest.TestCase):
                                   {"foo": {}, "bar": {}, "baz": {}}}},
                         {"foo": self.empty_attrs,
                          "bar": self.empty_attrs,
-                         "baz": {},
+                         "baz": self.dir_attrs,
                          "baz/foo": self.empty_attrs,
                          "baz/bar": self.empty_attrs,
-                         "baz/baz": {},
+                         "baz/baz": self.dir_attrs,
                          "baz/baz/foo": self.empty_attrs,
                          "baz/baz/bar": self.empty_attrs,
                          "baz/baz/baz": self.empty_attrs})
@@ -141,12 +148,15 @@ class Test_ManifestDirWalker_w_attrs(unittest.TestCase):
         }, {
             "foo": {
                 "size": 12,
-                "sha1": "fc6da897c87c7b9c3b67d1d5af32085e561db793" },
-            "bar": {},
+                "sha1": "fc6da897c87c7b9c3b67d1d5af32085e561db793",
+                "mode": 0o100644 },
+            "bar": self.dir_attrs,
             "bar/baz": {
                 "size": 12,
-                "sha1": "7508a86c26bcda1d3f298f67de33f7c48a3fe047" },
-            "symlink_to_bar_baz": {},
+                "sha1": "7508a86c26bcda1d3f298f67de33f7c48a3fe047",
+                "mode": 0o100644 },
+            "symlink_to_bar_baz": {
+                "mode": 0o120777 },
         })
 
 if __name__ == '__main__':

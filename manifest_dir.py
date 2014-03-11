@@ -1,15 +1,11 @@
 import os
+import stat
 import hashlib
 
 from manifest_builder import ManifestBuilder
 
-def size_from_path(path):
-    if os.path.isfile(path) and not os.path.islink(path):
-        return os.path.getsize(path)
-    return None # we consider non-files to have no size
-
-def sha1_from_path(path):
-    if os.path.isfile(path) and not os.path.islink(path):
+def sha1_from_path_stat(path, statinfo):
+    if stat.S_ISREG(statinfo.st_mode):
         with open(path, "rb") as f:
             return hashlib.sha1(f.read()).hexdigest()
     return None # we consider non-files to have no SHA1
@@ -18,13 +14,26 @@ class ManifestDirWalker(ManifestBuilder):
     """Walk a directory structure to generate a Manifest."""
 
     attr_handlers = {
-        # name: handler (full path -> parsed value)
-        "size": size_from_path,
-        "sha1": sha1_from_path,
+        # name: handler (fullpath, statinfo -> parsed value)
+        "mode": lambda p, s: s.st_mode,
+        "size": lambda p, s: s.st_size if stat.S_ISREG(s.st_mode) else None,
+        "sha1": sha1_from_path_stat,
     }
 
     def supported_attrs(self):
         return self.attr_handlers.keys()
+
+    def find_attrs(self, path, attrkeys):
+        if not attrkeys:
+            return {}
+
+        attrs = {}
+        statinfo = os.lstat(path)
+        for k in attrkeys:
+            v = self.attr_handlers[k](path, statinfo)
+            if v is not None:
+                attrs[k] = v
+        return attrs
 
     def build(self, path, attrkeys = None):
         """Generate a Manifest from the directory structure rooted at 'path'.
@@ -53,11 +62,6 @@ class ManifestDirWalker(ManifestBuilder):
             rel_path = dirpath[len(top_path):].lstrip(os.sep)
             components = rel_path.split(os.sep) if rel_path else []
             for name in filenames + dirnames:
-                attrs = {}
-                fullpath = os.path.join(dirpath, name)
-                for k in attrkeys:
-                    v = self.attr_handlers[k](fullpath)
-                    if v is not None:
-                        attrs[k] = v
+                attrs = self.find_attrs(os.path.join(dirpath, name), attrkeys)
                 top.add(components + [name], attrs)
         return top
