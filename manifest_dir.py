@@ -16,6 +16,8 @@ class ManifestDirWalker(ManifestBuilder):
     attr_handlers = {
         # name: handler (fullpath, statinfo -> parsed value)
         "mode": lambda p, s: s.st_mode,
+        "uid": lambda p, s: s.st_uid,
+        "gid": lambda p, s: s.st_gid,
         "size": lambda p, s: s.st_size if stat.S_ISREG(s.st_mode) else None,
         "sha1": sha1_from_path_stat,
     }
