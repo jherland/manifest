@@ -134,12 +134,20 @@ class ManifestFileWriter(object):
     ManifestFileParser class.
     """
 
+    formatter = {
+        # name: formatter (parsed value -> parse-able string)
+        "mode": lambda v: "0o%06o" % (v),
+        # all the others work with str() default formatting
+    }
+
     def format_attrs(self, attrs):
         """Return a parseable string representation of the given attributes."""
         if not attrs:
             return ""
-        return " {%s}" % (
-            ", ".join(["%s: %s" % (k, v) for k, v in sorted(attrs.items())]))
+        l = []
+        for k, v in sorted(attrs.items()):
+            l.append("%s: %s" % (k, self.formatter.get(k, str)(v)))
+        return " {%s}" % (", ".join(l))
 
     def write(self, m, f, level = 0, indent = "\t", attrkeys = None):
         """Write the given Manifest in a ManifestFileParser-compatible format.

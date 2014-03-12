@@ -7,6 +7,7 @@ except ImportError:
     except ImportError:
         from io import StringIO # python3
 
+from manifest import Manifest
 from manifest_file import ManifestFileParser, ManifestFileWriter
 
 class Test_ManifestFileWriter(unittest.TestCase):
@@ -40,10 +41,23 @@ class Test_ManifestFileWriter(unittest.TestCase):
         self.must_equal(["foo", "\tbar", "\t\tbaz"],
                         "XXXfoo\nXXXXbar\nXXXXXbaz\n", indent = "X", level = 3)
 
-    def test_entries_w_attrs(self):
+    def test_entries_w_parsed_attrs(self):
         self.must_equal(
             ["foo {}", "\tbar {size:123}", "\t\tbaz { xyzzy : zyxxy , a : b }"],
             "foo\n\tbar {size: 123}\n\t\tbaz {a: b, xyzzy: zyxxy}\n")
+
+    def test_entries_w_direct_attrs(self):
+        m = Manifest()
+        m.add(["foo"], {"uid": 1234, "gid": 321})
+        m.add(["foo", "bar"], {"size": 123, "mode": 0o040755})
+        m.add(["foo", "bar", "baz"], {"xyzzy": "z", "a": "b", "mode": 0o100644})
+        s = StringIO()
+        ManifestFileWriter().write(m, s, indent = "    ")
+        self.assertEqual(s.getvalue(), """\
+foo {gid: 321, uid: 1234}
+    bar {mode: 0o040755, size: 123}
+        baz {a: b, mode: 0o100644, xyzzy: z}
+""")
 
 if __name__ == '__main__':
     unittest.main()
