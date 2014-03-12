@@ -3,6 +3,7 @@
 import unittest
 
 from test_ManifestFileParser import *
+from test_ManifestFileWriter import *
 from test_ManifestDirWalker import *
 from test_ManifestTarWalker import *
 from test_Manifest_misc import *
