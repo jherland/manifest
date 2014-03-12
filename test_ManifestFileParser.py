@@ -147,10 +147,19 @@ class Test_ManifestFileParser_build(unittest.TestCase):
         self.assertEqual(m, {"foo": {}})
         self.assertEqual(m["foo"].getattrs(), {})
 
+    def test_unknown_attr(self):
+        m = self.mfp.build(["foo {bar: baz}"])
+        self.assertEqual(m, {"foo": {}})
+        self.assertEqual(m["foo"].getattrs(), { "bar": "baz"})
+
     def test_size_attr(self):
         m = self.mfp.build(["foo {size: 1}"])
         self.assertEqual(m, {"foo": {}})
         self.assertEqual(m["foo"].getattrs(), {"size": 1})
+
+    def test_invalid_size_attr_raises(self):
+        self.assertRaises(ValueError, self.mfp.build, ["foo {size: bar}"])
+        self.assertRaises(ValueError, self.mfp.build, ["foo {size: -1}"])
 
     def test_two_attrs(self):
         sha1 = "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef"
@@ -164,10 +173,9 @@ class Test_ManifestFileParser_build(unittest.TestCase):
         self.assertEqual(m, {"foo": {}})
         self.assertEqual(m["foo"].getattrs(), {"size": 1, "sha1": sha1.lower()})
 
-    def test_unknown_attr(self):
-        m = self.mfp.build(["foo {bar: baz}"])
-        self.assertEqual(m, {"foo": {}})
-        self.assertEqual(m["foo"].getattrs(), { "bar": "baz"})
+    def test_invalid_sha1_attr_raises(self):
+        self.assertRaises(ValueError, self.mfp.build, ["foo {sha1: not_hex}"])
+        self.assertRaises(ValueError, self.mfp.build, ["foo {sha1: 123}"]) # <40
 
 if __name__ == '__main__':
     unittest.main()

@@ -3,6 +3,12 @@ import re
 
 from manifest_builder import ManifestBuilder
 
+def parse_uint(s):
+    ret = int(s, base=0)
+    if ret < 0:
+        raise ValueError("Negative integer not allowed here: '%s'" % (s))
+    return ret
+
 def parse_sha1sum(s, _sha1RE = re.compile(r'^[0-9a-f]{40}$')):
     sha1 = s.strip().lower()
     if not _sha1RE.match(sha1):
@@ -31,7 +37,7 @@ class ManifestFileParser(ManifestBuilder):
 
     attr_handlers = {
         # name: handler (string -> parsed value)
-        "size": lambda s: int(s, base=0),
+        "size": parse_uint,
         "sha1": parse_sha1sum,
     }
 
