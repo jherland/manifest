@@ -156,5 +156,42 @@ class Test_ManifestTarWalker_w_attrs(unittest.TestCase):
                 "mode": 0o120777 },
         })
 
+class Test_ManifestTarWalker_w_all_attrs(unittest.TestCase):
+
+    def test_files_with_contents(self):
+        import os
+        s = os.stat(t_path("files_with_contents.tar"))
+        expect_uid, expect_gid = s.st_uid, s.st_gid
+        m = ManifestTarWalker().build(t_path("files_with_contents.tar"))
+        self.assertEqual(m, {
+            "foo": {},
+            "bar": {"baz": {}},
+            "symlink_to_bar_baz": {}
+        })
+        self.assertEqual(m.resolve("foo").getattrs(), {
+            "size": 12,
+            "sha1": "fc6da897c87c7b9c3b67d1d5af32085e561db793",
+            "mode": 0o100644,
+            "uid": expect_uid,
+            "gid": expect_gid,
+        })
+        self.assertEqual(m.resolve("bar").getattrs(), {
+            "mode": 0o040755,
+            "uid": expect_uid,
+            "gid": expect_gid,
+        })
+        self.assertEqual(m.resolve("bar/baz").getattrs(), {
+            "size": 12,
+            "sha1": "7508a86c26bcda1d3f298f67de33f7c48a3fe047",
+            "mode": 0o100644,
+            "uid": expect_uid,
+            "gid": expect_gid,
+        })
+        self.assertEqual(m.resolve("symlink_to_bar_baz").getattrs(), {
+            "mode": 0o120777,
+            "uid": expect_uid,
+            "gid": expect_gid,
+        })
+
 if __name__ == '__main__':
     unittest.main()

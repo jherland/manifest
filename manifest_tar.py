@@ -33,6 +33,8 @@ class ManifestTarWalker(ManifestBuilder):
     attr_handlers = {
         # name: handler (tarfile, tarinfo -> parsed value)
         "mode": mode_from_tarinfo,
+        "uid": lambda tf, ti: ti.uid,
+        "gid": lambda tf, ti: ti.gid,
         "size": lambda tf, ti: ti.size if ti.isfile() else None,
         "sha1": sha1_from_tarinfo,
     }
