@@ -1,17 +1,30 @@
 import tarfile
+import stat
 import hashlib
 
 from manifest_builder import ManifestBuilder
 
-def size_from_tarinfo(tf, ti):
-    if ti.isfile():
-        return ti.size
-    return None
+def mode_from_tarinfo(tf, ti):
+    ret = ti.mode
+    if ti.isfifo():
+        ret |= stat.S_IFIFO
+    elif ti.ischr():
+        ret |= stat.S_IFCHR
+    elif ti.isdir():
+        ret |= stat.S_IFDIR
+    elif ti.isblk():
+        ret |= stat.S_IFBLK
+    elif ti.isreg():
+        ret |= stat.S_IFREG
+    elif ti.issym():
+        ret |= stat.S_IFLNK
+    else:
+        raise ValueError("Cannot deduce mode from %s/%s" % (tf, ti))
+    return ret
 
 def sha1_from_tarinfo(tf, ti):
     if ti.isfile():
-        f = tf.extractfile(ti)
-        return hashlib.sha1(f.read()).hexdigest()
+        return hashlib.sha1(tf.extractfile(ti).read()).hexdigest()
     return None
 
 class ManifestTarWalker(ManifestBuilder):
@@ -19,12 +32,24 @@ class ManifestTarWalker(ManifestBuilder):
 
     attr_handlers = {
         # name: handler (tarfile, tarinfo -> parsed value)
-        "size": size_from_tarinfo,
+        "mode": mode_from_tarinfo,
+        "size": lambda tf, ti: ti.size if ti.isfile() else None,
         "sha1": sha1_from_tarinfo,
     }
 
     def supported_attrs(self):
         return self.attr_handlers.keys()
+
+    def find_attrs(self, tf, ti, attrkeys):
+        if not attrkeys:
+            return {}
+
+        attrs = {}
+        for k in attrkeys:
+            v = self.attr_handlers[k](tf, ti)
+            if v is not None:
+                attrs[k] = v
+        return attrs
 
     def build(self, tarpath, subdir = "./", attrkeys = None):
         """Generate a Manifest from the given tar file.
@@ -47,11 +72,7 @@ class ManifestTarWalker(ManifestBuilder):
         for ti in tf:
             if not ti.name.startswith(subdir):
                 continue
-            attrs = {}
-            for k in attrkeys:
-                v = self.attr_handlers[k](tf, ti)
-                if v is not None:
-                    attrs[k] = v
+            attrs = self.find_attrs(tf, ti, attrkeys)
             rel_path = ti.name[len(subdir):]
             top.add(rel_path.split('/'), attrs)
         tf.close()
