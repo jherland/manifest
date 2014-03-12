@@ -37,6 +37,9 @@ class ManifestFileParser(ManifestBuilder):
 
     attr_handlers = {
         # name: handler (string -> parsed value)
+        "mode": parse_uint,
+        "uid": parse_uint,
+        "gid": parse_uint,
         "size": parse_uint,
         "sha1": parse_sha1sum,
     }

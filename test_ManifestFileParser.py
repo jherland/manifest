@@ -177,5 +177,16 @@ class Test_ManifestFileParser_build(unittest.TestCase):
         self.assertRaises(ValueError, self.mfp.build, ["foo {sha1: not_hex}"])
         self.assertRaises(ValueError, self.mfp.build, ["foo {sha1: 123}"]) # <40
 
+    def test_mode_Xid_attr(self):
+        m = self.mfp.build(["foo { mode: 0o100644, uid: 1000, gid: 100 }"])
+        self.assertEqual(m, {"foo": {}})
+        self.assertEqual(m["foo"].getattrs(),
+                         {"mode": 0o100644, "uid": 1000, "gid": 100})
+
+    def test_invalid_mode_Xid_attr_raises(self):
+        self.assertRaises(ValueError, self.mfp.build, ["foo {mode: not_int}"])
+        self.assertRaises(ValueError, self.mfp.build, ["foo {uid: -13}"])
+        self.assertRaises(ValueError, self.mfp.build, ["foo {gid: 0x123foo}"])
+
 if __name__ == '__main__':
     unittest.main()
