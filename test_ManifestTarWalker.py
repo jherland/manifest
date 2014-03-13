@@ -159,9 +159,11 @@ class Test_ManifestTarWalker_w_attrs(unittest.TestCase):
 class Test_ManifestTarWalker_w_all_attrs(unittest.TestCase):
 
     def test_files_with_contents(self):
-        import os
-        s = os.stat(t_path("files_with_contents.tar"))
-        expect_uid, expect_gid = s.st_uid, s.st_gid
+        import tarfile
+        tf = tarfile.open(t_path("files_with_contents.tar"), errorlevel=1)
+        ti = tf.next()
+        expect_uid, expect_gid = ti.uid, ti.gid
+        tf.close()
         m = ManifestTarWalker().build(t_path("files_with_contents.tar"))
         self.assertEqual(m, {
             "foo": {},
